@@ -23,14 +23,14 @@ public class UserMapper {
     }
 
     return new User(
-        null, // id será gerado pelo banco
+        null, // id será gerado automaticamente pelo UUID
         createUserDto.email(),
         createUserDto.password(), // será criptografada no service
         createUserDto.name(),
         createUserDto.role(),
         true, // enabled padrão true
-        Instant.now(), // createdAt
-        null // updatedAt será null na criação
+        null, // createdAt será preenchido automaticamente pelo @CreatedDate
+        null // updatedAt será preenchido automaticamente pelo @LastModifiedDate
     );
   }
 
