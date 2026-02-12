@@ -1,4 +1,4 @@
-CREATE TABLE production_order_items (
+CREATE TABLE IF NOT EXISTS production_order_items (
   id BIGSERIAL PRIMARY KEY,
   production_order_id BIGINT NOT NULL,
   kind VARCHAR(10) NOT NULL, -- INPUT / OUTPUT
@@ -20,7 +20,7 @@ CREATE TABLE production_order_items (
     CHECK (kind IN ('INPUT','OUTPUT'))
 );
 
-CREATE INDEX idx_poi_order ON production_order_items(production_order_id);
-CREATE INDEX idx_poi_ext_product ON production_order_items(external_product_id);
-CREATE INDEX idx_poi_kind ON production_order_items(kind);
-CREATE INDEX idx_poi_lot ON production_order_items(lot_code);
+CREATE INDEX IF NOT EXISTS idx_poi_order ON production_order_items(production_order_id);
+CREATE INDEX IF NOT EXISTS idx_poi_ext_product ON production_order_items(external_product_id);
+CREATE INDEX IF NOT EXISTS idx_poi_kind ON production_order_items(kind);
+CREATE INDEX IF NOT EXISTS idx_poi_lot ON production_order_items(lot_code);
