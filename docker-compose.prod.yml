@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Aplicação Spring Boot para produção
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: stockflow-app-prod
+    environment:
+      # Configurações do banco de dados (usar RDS da AWS)
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DATABASE_URL: ${DATABASE_URL}
+      
+      # Configurações da API externa
+      EXTERNAL_API_BASE_URL: ${EXTERNAL_API_BASE_URL:-https://api.iniciativaaplicativos.com.br/api}
+      EXTERNAL_API_TOKEN: ${EXTERNAL_API_TOKEN}
+      EXTERNAL_API_SECRET: ${EXTERNAL_API_SECRET}
+      
+      # Configurações de produção
+      PORT: 8080
+      SPRING_PROFILES_ACTIVE: prod
+      
+      # Configurações de JVM para produção
+      JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC -XX:+UseStringDeduplication"
+    ports:
+      - "8080:8080"
+    networks:
+      - stockflow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/stockflow-api/actuator/health"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    logging:
+      driver: awslogs
+      options:
+        awslogs-group: /ecs/stockflow-api
+        awslogs-region: us-east-1
+        awslogs-stream-prefix: ecs
+
+networks:
+  stockflow-network:
+    driver: bridge

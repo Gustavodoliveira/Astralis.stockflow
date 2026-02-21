@@ -1,12 +1,43 @@
-HELP.md
-POSTGRESQL_SETUP.md
+# ========================================
+# STOCKFLOW API - GIT IGNORE
+# ========================================
+
+# === DOCUMENTAÇÃO E CONFIGURAÇÕES SENSÍVEIS ===
+# Pasta de documentação (não committar arquivos de ajuda)
+docs/
+
+# Scripts de configuração sensíveis
 configure-postgresql.sh
+
+# Arquivos SQL de configuração local
+init-db.sql
+fix_flyway.sql
+
+# === ARQUIVOS DE AMBIENTE - NUNCA COMMITTAR ===
+.env
+.env.*
+*.env
+!.env.example
+
+# === CONFIGURAÇÕES DE APLICAÇÃO ===
+# Permitir arquivos principais de configuração
+!src/main/resources/application*.yaml
+!src/main/resources/application*.yml
+!docker-compose.yml
+!docker-compose.prod.yml
+
+# Mas ignorar configurações locais específicas
+src/main/resources/application-local.*
+docker-compose.override.yml
+docker-compose.local.yml
+
+# === ARQUIVOS DE BUILD E DEPENDÊNCIAS ===
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
+# === IDEs - STS ===
 .apt_generated
 .classpath
 .factorypath
@@ -14,14 +45,14 @@ target/
 .settings
 .springBeans
 .sts4-cache
-*.yaml
-### IntelliJ IDEA ###
+
+# === IDEs - IntelliJ IDEA ===
 .idea
 *.iws
 *.iml
 *.ipr
 
-### NetBeans ###
+# === IDEs - NetBeans ===
 /nbproject/private/
 /nbbuild/
 /dist/
@@ -31,5 +62,22 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### VS Code ###
+# === IDEs - VS Code ===
 .vscode/
+
+# === LOGS E TEMPORÁRIOS ===
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# === ESPECÍFICOS DO DOCKER ===
+# Manter docker-compose.yml principais, mas ignorar locais
+docker-compose.override.yml
+docker-compose.local.yml
+
+# === ARQUIVOS DE BACKUP ===
+*.bak
+*.backup
+*.old

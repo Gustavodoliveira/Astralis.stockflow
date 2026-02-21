@@ -14,10 +14,10 @@ public class ExternalApiConfig {
   @Value("${external.api.base-url:https://api.iniciativaaplicativos.com.br/api}")
   private String baseUrl;
 
-  @Value("${external.api.token:usQjA5McLAyQLc16S9wnESl9fAk4kDYbVasJtyRzMKPPufpx7uqnH6r1128HCw6Q}")
+  @Value("${external.api.token:DEFAULT_TOKEN}")
   private String token;
 
-  @Value("${external.api.secret:lxs7KnxBIX24w88t4J169KPxc9UTgdFyfPloZdRGRMfKKJL2YxtawOnbe4zy1VlG}")
+  @Value("${external.api.secret:DEFAULT_SECRET}")
   private String secret;
 
   @Bean

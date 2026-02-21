@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: stockflow-api
+
+  # Configuração do banco de dados para PRODUÇÃO
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/stockflow_dev}
+    username: ${DB_USERNAME:stockflow_user}
+    password: ${DB_PASSWORD:stockflow_pass}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # Configuração do JPA/Hibernate para PRODUÇÃO
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+
+  # Configuração do Flyway para migrações
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    validate-on-migrate: false
+    repair: true
+
+# Configuração do servidor para PRODUÇÃO
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /v1/stockflow-api
+  error:
+    include-stacktrace: never
+    include-message: never
+
+# Configuração de logs para PRODUÇÃO
+logging:
+  level:
+    org.springframework.security: WARN
+    com.astralis.flow.stockflow_api: INFO
+    root: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Configurações de segurança para produção
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+# Configurações da API externa
+external:
+  api:
+    base-url: ${EXTERNAL_API_BASE_URL:https://api.iniciativaaplicativos.com.br/api}
+    token: ${EXTERNAL_API_TOKEN:DEFAULT_TOKEN}
+    secret: ${EXTERNAL_API_SECRET:DEFAULT_SECRET}

@@ -47,13 +47,13 @@ public class ExampleIntegrationService {
     }
   }
 
-  public String getExternalItemsByDescription(String description) {
+  public String getExternalItemsLotById(String id) {
     logger.info("Buscando itens da API externa");
     try {
       String response = apiClient
-          .get("/apontamentos/estoques/lotes/lista/" + "?offset=50&page=1&filters=produtos|" + description);
+          .get("/apontamentos/estoques/lotes/lista/" + "?offset=50&page=1&filters=produtos|" + id);
 
-      logger.info("Resposta recebida da API externa para a descrição {}: {}", description, response);
+      logger.info("Resposta recebida da API externa para o ID {}: {}", id, response);
       return response;
     } catch (Exception e) {
       logger.error("Erro ao buscar itens da API externa: {}", e.getMessage());
