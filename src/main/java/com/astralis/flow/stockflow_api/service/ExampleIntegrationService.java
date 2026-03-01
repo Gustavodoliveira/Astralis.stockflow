@@ -61,6 +61,23 @@ public class ExampleIntegrationService {
     }
   }
 
+  public String getProductsByDescription(String description) {
+    logger.info("Buscando itens da API externa por descrição {}", description);
+
+    // Debug: verificar se as configurações estão corretas
+    logger.info("Base URL configurada: {}", apiClient.toString());
+
+    try {
+      String response = apiClient.get("/engenharia/produtos/lista?offset=50&page=1&filters=descricao|" + description);
+      logger.info("Resposta recebida da API externa para a descrição {}: {}", description, response);
+      return response;
+    } catch (Exception e) {
+      logger.error("Erro ao buscar produtos por descrição. URL: /engenharia/produtos/lista, Descrição: {}, Erro: {}",
+          description, e.getMessage(), e);
+      throw e; // Re-throw para manter o erro original
+    }
+  }
+
   /**
    * Exemplo: Método utilitário para criar um payload padrão
    */

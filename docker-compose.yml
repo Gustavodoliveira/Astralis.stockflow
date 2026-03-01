@@ -50,7 +50,7 @@ services:
     networks:
       - stockflow-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/stockflow-api/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5

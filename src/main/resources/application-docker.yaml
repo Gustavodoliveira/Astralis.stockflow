@@ -39,7 +39,7 @@ spring:
 server:
   port: ${PORT:8080}
   servlet:
-    context-path: /v1/stockflow-api
+    context-path: /api
   error:
     include-stacktrace: on_param
     include-message: always

@@ -1,5 +1,7 @@
 package com.astralis.flow.stockflow_api.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
@@ -13,6 +15,7 @@ import java.util.Map;
 @Component
 public class ExternalApiClient {
 
+  private static final Logger logger = LoggerFactory.getLogger(ExternalApiClient.class);
   private final WebClient webClient;
 
   @Autowired
@@ -27,20 +30,35 @@ public class ExternalApiClient {
    * @return String com a resposta da API
    */
   public String get(String endpoint) {
+    logger.info("Fazendo requisição GET para: {}", endpoint);
+
     try {
-      return webClient
+      String response = webClient
           .get()
           .uri(endpoint)
           .retrieve()
-          .onStatus(HttpStatusCode::isError, response -> {
-            return response.bodyToMono(String.class)
-                .flatMap(errorBody -> Mono.error(
-                    new RuntimeException("Erro HTTP " + response.statusCode() + ": " + errorBody)));
+          .onStatus(HttpStatusCode::isError, clientResponse -> {
+            return clientResponse.bodyToMono(String.class)
+                .flatMap(errorBody -> {
+                  logger.error("Erro HTTP {} ao fazer GET para {}: {}",
+                      clientResponse.statusCode(), endpoint, errorBody);
+                  return Mono.error(
+                      new RuntimeException("Erro HTTP " + clientResponse.statusCode() + ": " + errorBody));
+                });
           })
           .bodyToMono(String.class)
           .block();
+
+      logger.info("Requisição GET para {} concluída com sucesso. Tamanho da resposta: {} chars",
+          endpoint, response != null ? response.length() : 0);
+      return response;
     } catch (WebClientResponseException e) {
+      logger.error("WebClientResponseException ao fazer GET para {}: Status={}, Body={}",
+          endpoint, e.getStatusCode(), e.getResponseBodyAsString());
       throw new RuntimeException("Erro ao fazer requisição GET para " + endpoint + ": " + e.getMessage(), e);
+    } catch (Exception e) {
+      logger.error("Erro inesperado ao fazer GET para {}: {}", endpoint, e.getMessage(), e);
+      throw new RuntimeException("Erro inesperado ao fazer requisição GET para " + endpoint, e);
     }
   }
 

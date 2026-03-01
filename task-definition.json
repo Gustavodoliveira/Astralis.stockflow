@@ -1,0 +1,76 @@
+{
+  "family": "stockflow-api",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "stockflow-api",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/stockflow-api:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "prod"
+        },
+        {
+          "name": "PORT",
+          "value": "8080"
+        },
+        {
+          "name": "EXTERNAL_API_BASE_URL",
+          "value": "https://api.iniciativaaplicativos.com.br/api"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:ssm:us-east-1:ACCOUNT_ID:parameter/stockflow-api/database-url"
+        },
+        {
+          "name": "DB_USERNAME",
+          "valueFrom": "arn:aws:ssm:us-east-1:ACCOUNT_ID:parameter/stockflow-api/db-username"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "valueFrom": "arn:aws:ssm:us-east-1:ACCOUNT_ID:parameter/stockflow-api/db-password"
+        },
+        {
+          "name": "EXTERNAL_API_TOKEN",
+          "valueFrom": "arn:aws:ssm:us-east-1:ACCOUNT_ID:parameter/stockflow-api/external-api-token"
+        },
+        {
+          "name": "EXTERNAL_API_SECRET",
+          "valueFrom": "arn:aws:ssm:us-east-1:ACCOUNT_ID:parameter/stockflow-api/external-api-secret"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/stockflow-api",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8080/api/actuator/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 0
+      }
+    }
+  ]
+}
