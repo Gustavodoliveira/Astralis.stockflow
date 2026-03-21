@@ -2,8 +2,7 @@ package com.astralis.flow.stockflow_api.controller;
 
 import com.astralis.flow.stockflow_api.config.ExternalApiConfig;
 import com.astralis.flow.stockflow_api.model.dtos.external.ExternalItemResponse;
-import com.astralis.flow.stockflow_api.service.ExampleIntegrationService;
-import com.astralis.flow.stockflow_api.service.ExternalApiService;
+import com.astralis.flow.stockflow_api.service.StockIntegrationService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.models.examples.Example;
@@ -18,17 +17,14 @@ import java.util.Map;
 @RestController
 @RequestMapping("/external")
 public class ExternalApiController {
-
-  private final ExternalApiService externalApiService;
-  private final ExampleIntegrationService exampleIntegrationService;
+  private final StockIntegrationService stockIntegrationService;
   private final ExternalApiConfig externalApiConfig;
 
   @Autowired
-  public ExternalApiController(ExternalApiService externalApiService,
-      ExampleIntegrationService exampleIntegrationService,
+  public ExternalApiController(
+      StockIntegrationService stockIntegrationService,
       ExternalApiConfig externalApiConfig) {
-    this.externalApiService = externalApiService;
-    this.exampleIntegrationService = exampleIntegrationService;
+    this.stockIntegrationService = stockIntegrationService;
     this.externalApiConfig = externalApiConfig;
   }
 
@@ -36,7 +32,7 @@ public class ExternalApiController {
   @Operation(summary = "Buscar lotes por localização")
   public ResponseEntity<String> getLotByLocation(@PathVariable String location) {
     try {
-      String items = exampleIntegrationService.getExternalItemsByLocation(location);
+      String items = stockIntegrationService.getExternalItemsByLocation(location);
       return ResponseEntity.ok(items);
     } catch (Exception e) {
       return ResponseEntity.internalServerError().build();
@@ -47,7 +43,7 @@ public class ExternalApiController {
   @Operation(summary = "Buscar lotes por ID do produto")
   public ResponseEntity<String> getLotById(@PathVariable String Id) {
     try {
-      String items = exampleIntegrationService.getExternalItemsLotById(Id);
+      String items = stockIntegrationService.getExternalItemsLotById(Id);
       return ResponseEntity.ok(items);
     } catch (Exception e) {
       return ResponseEntity.internalServerError().build();
@@ -58,7 +54,7 @@ public class ExternalApiController {
   @Operation(summary = "Buscar itens por descrição")
   public ResponseEntity<String> getItemByDescription(@PathVariable String description) {
     try {
-      String items = exampleIntegrationService.getProductsByDescription(description);
+      String items = stockIntegrationService.getProductsByDescription(description);
       return ResponseEntity.ok(items);
     } catch (Exception e) {
       return ResponseEntity.internalServerError().build();

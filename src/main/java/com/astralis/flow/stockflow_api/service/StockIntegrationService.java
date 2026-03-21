@@ -20,15 +20,15 @@ import java.util.Map;
  * usando a API externa
  */
 @Service
-public class ExampleIntegrationService {
+public class StockIntegrationService {
 
-  private static final Logger logger = LoggerFactory.getLogger(ExampleIntegrationService.class);
+  private static final Logger logger = LoggerFactory.getLogger(StockIntegrationService.class);
 
   private final ExternalApiClient apiClient;
   private final ObjectMapper objectMapper;
 
   @Autowired
-  public ExampleIntegrationService(ExternalApiClient apiClient, ObjectMapper objectMapper) {
+  public StockIntegrationService(ExternalApiClient apiClient, ObjectMapper objectMapper) {
     this.apiClient = apiClient;
     this.objectMapper = objectMapper;
   }
