@@ -4,7 +4,11 @@ import com.astralis.flow.stockflow_api.client.ExternalApiClient;
 import com.astralis.flow.stockflow_api.model.dtos.external.products.GetProducts;
 import com.astralis.flow.stockflow_api.model.dtos.external.products.GetProductsResponse;
 import com.astralis.flow.stockflow_api.model.dtos.external.products.ProductResponseDTO;
+import com.astralis.flow.stockflow_api.model.dtos.external.lot.GetLote;
+import com.astralis.flow.stockflow_api.model.dtos.external.lot.GetLotesResponse;
+import com.astralis.flow.stockflow_api.model.dtos.external.lot.LoteResponseDto;
 import com.astralis.flow.stockflow_api.model.mappers.external.ProductMapper;
+import com.astralis.flow.stockflow_api.model.mappers.external.LoteMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,12 +32,15 @@ public class StockIntegrationService {
   private final ExternalApiClient apiClient;
   private final ObjectMapper objectMapper;
   private final ProductMapper productMapper;
+  private final LoteMapper loteMapper;
 
   @Autowired
-  public StockIntegrationService(ExternalApiClient apiClient, ObjectMapper objectMapper, ProductMapper productMapper) {
+  public StockIntegrationService(ExternalApiClient apiClient, ObjectMapper objectMapper,
+      ProductMapper productMapper, LoteMapper loteMapper) {
     this.apiClient = apiClient;
     this.objectMapper = objectMapper;
     this.productMapper = productMapper;
+    this.loteMapper = loteMapper;
   }
 
   public String getExternalItemsByLocation(String localização) {
@@ -82,6 +89,46 @@ public class StockIntegrationService {
     } catch (Exception e) {
       logger.error("Erro ao buscar produtos por descrição '{}': {}", description, e.getMessage());
       throw new RuntimeException("Falha ao buscar produtos por descrição", e);
+    }
+  }
+
+  public List<LoteResponseDto> getLotesByLocation(String localizacao) {
+    logger.info("Buscando lotes da API externa por localização: {}", localizacao);
+    try {
+      String jsonResponse = apiClient
+          .get("/apontamentos/estoques/lotes/lista/?offset=50&page=1&filters=localizacao|" + localizacao);
+
+      // Mapear resposta completa da API externa
+      GetLotesResponse fullResponse = objectMapper.readValue(jsonResponse, GetLotesResponse.class);
+
+      // Converter para DTOs limpos da nossa API
+      List<LoteResponseDto> cleanLotes = loteMapper.toResponseDTOList(fullResponse.response());
+
+      logger.info("Convertidos {} lotes para resposta limpa", cleanLotes.size());
+      return cleanLotes;
+    } catch (Exception e) {
+      logger.error("Erro ao buscar lotes por localização '{}': {}", localizacao, e.getMessage());
+      throw new RuntimeException("Falha ao buscar lotes por localização", e);
+    }
+  }
+
+  public List<LoteResponseDto> getLotesById(String id) {
+    logger.info("Buscando lotes da API externa por ID do produto: {}", id);
+    try {
+      String jsonResponse = apiClient
+          .get("/apontamentos/estoques/lotes/lista/?offset=50&page=1&filters=produtos|" + id);
+
+      // Mapear resposta completa da API externa
+      GetLotesResponse fullResponse = objectMapper.readValue(jsonResponse, GetLotesResponse.class);
+
+      // Converter para DTOs limpos da nossa API
+      List<LoteResponseDto> cleanLotes = loteMapper.toResponseDTOList(fullResponse.response());
+
+      logger.info("Convertidos {} lotes para resposta limpa", cleanLotes.size());
+      return cleanLotes;
+    } catch (Exception e) {
+      logger.error("Erro ao buscar lotes por ID do produto '{}': {}", id, e.getMessage());
+      throw new RuntimeException("Falha ao buscar lotes por ID do produto", e);
     }
   }
 

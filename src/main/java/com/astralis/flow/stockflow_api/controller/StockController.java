@@ -2,6 +2,7 @@ package com.astralis.flow.stockflow_api.controller;
 
 import com.astralis.flow.stockflow_api.config.ExternalApiConfig;
 import com.astralis.flow.stockflow_api.model.dtos.external.products.ProductResponseDTO;
+import com.astralis.flow.stockflow_api.model.dtos.external.lot.LoteResponseDto;
 import com.astralis.flow.stockflow_api.service.StockIntegrationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,13 +17,13 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/external")
-public class ExternalApiController {
+@RequestMapping("/stock")
+public class StockController {
   private final StockIntegrationService stockIntegrationService;
   private final ExternalApiConfig externalApiConfig;
 
   @Autowired
-  public ExternalApiController(
+  public StockController(
       StockIntegrationService stockIntegrationService,
       ExternalApiConfig externalApiConfig) {
     this.stockIntegrationService = stockIntegrationService;
@@ -31,10 +32,10 @@ public class ExternalApiController {
 
   @GetMapping("/getLotByLocation/{location}")
   @Operation(summary = "Buscar lotes por localização")
-  public ResponseEntity<String> getLotByLocation(@PathVariable String location) {
+  public ResponseEntity<List<LoteResponseDto>> getLotByLocation(@PathVariable String location) {
     try {
-      String items = stockIntegrationService.getExternalItemsByLocation(location);
-      return ResponseEntity.ok(items);
+      List<LoteResponseDto> lotes = stockIntegrationService.getLotesByLocation(location);
+      return ResponseEntity.ok(lotes);
     } catch (Exception e) {
       return ResponseEntity.internalServerError().build();
     }
@@ -42,10 +43,10 @@ public class ExternalApiController {
 
   @GetMapping("/getLotById/{Id}")
   @Operation(summary = "Buscar lotes por ID do produto")
-  public ResponseEntity<String> getLotById(@PathVariable String Id) {
+  public ResponseEntity<List<LoteResponseDto>> getLotById(@PathVariable String Id) {
     try {
-      String items = stockIntegrationService.getExternalItemsLotById(Id);
-      return ResponseEntity.ok(items);
+      List<LoteResponseDto> lotes = stockIntegrationService.getLotesById(Id);
+      return ResponseEntity.ok(lotes);
     } catch (Exception e) {
       return ResponseEntity.internalServerError().build();
     }
