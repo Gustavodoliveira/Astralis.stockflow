@@ -1,7 +1,7 @@
 package com.astralis.flow.stockflow_api.controller;
 
 import com.astralis.flow.stockflow_api.config.ExternalApiConfig;
-import com.astralis.flow.stockflow_api.model.dtos.external.ExternalItemResponse;
+import com.astralis.flow.stockflow_api.model.dtos.external.products.ProductResponseDTO;
 import com.astralis.flow.stockflow_api.service.StockIntegrationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -51,11 +52,11 @@ public class ExternalApiController {
   }
 
   @GetMapping("/getItemByDescription/{description}")
-  @Operation(summary = "Buscar itens por descrição")
-  public ResponseEntity<String> getItemByDescription(@PathVariable String description) {
+  @Operation(summary = "Buscar produtos por descrição")
+  public ResponseEntity<List<ProductResponseDTO>> getItemByDescription(@PathVariable String description) {
     try {
-      String items = stockIntegrationService.getProductsByDescription(description);
-      return ResponseEntity.ok(items);
+      List<ProductResponseDTO> products = stockIntegrationService.getProductsByDescription(description);
+      return ResponseEntity.ok(products);
     } catch (Exception e) {
       return ResponseEntity.internalServerError().build();
     }

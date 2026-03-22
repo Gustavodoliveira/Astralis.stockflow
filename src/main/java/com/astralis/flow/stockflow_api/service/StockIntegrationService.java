@@ -1,9 +1,10 @@
 package com.astralis.flow.stockflow_api.service;
 
 import com.astralis.flow.stockflow_api.client.ExternalApiClient;
-import com.astralis.flow.stockflow_api.model.dtos.external.ExternalItemResponse;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.astralis.flow.stockflow_api.model.dtos.external.products.GetProducts;
+import com.astralis.flow.stockflow_api.model.dtos.external.products.GetProductsResponse;
+import com.astralis.flow.stockflow_api.model.dtos.external.products.ProductResponseDTO;
+import com.astralis.flow.stockflow_api.model.mappers.external.ProductMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +27,13 @@ public class StockIntegrationService {
 
   private final ExternalApiClient apiClient;
   private final ObjectMapper objectMapper;
+  private final ProductMapper productMapper;
 
   @Autowired
-  public StockIntegrationService(ExternalApiClient apiClient, ObjectMapper objectMapper) {
+  public StockIntegrationService(ExternalApiClient apiClient, ObjectMapper objectMapper, ProductMapper productMapper) {
     this.apiClient = apiClient;
     this.objectMapper = objectMapper;
+    this.productMapper = productMapper;
   }
 
   public String getExternalItemsByLocation(String localização) {
@@ -61,32 +64,25 @@ public class StockIntegrationService {
     }
   }
 
-  public String getProductsByDescription(String description) {
-    logger.info("Buscando itens da API externa por descrição {}", description);
-
-    // Debug: verificar se as configurações estão corretas
-    logger.info("Base URL configurada: {}", apiClient.toString());
+  public List<ProductResponseDTO> getProductsByDescription(String description) {
+    logger.info("Buscando produtos da API externa por descrição: {}", description);
 
     try {
-      String response = apiClient.get("/engenharia/produtos/lista?offset=50&page=1&filters=descricao|" + description);
-      logger.info("Resposta recebida da API externa para a descrição {}: {}", description, response);
-      return response;
+      String jsonResponse = apiClient
+          .get("/engenharia/produtos/lista?offset=50&page=1&filters=descricao|" + description);
+
+      // Mapear resposta completa da API externa
+      GetProductsResponse fullResponse = objectMapper.readValue(jsonResponse, GetProductsResponse.class);
+
+      // Converter para DTOs limpos da nossa API
+      List<ProductResponseDTO> cleanProducts = productMapper.toResponseDTOList(fullResponse.response());
+
+      return cleanProducts;
+
     } catch (Exception e) {
-      logger.error("Erro ao buscar produtos por descrição. URL: /engenharia/produtos/lista, Descrição: {}, Erro: {}",
-          description, e.getMessage(), e);
-      throw e; // Re-throw para manter o erro original
+      logger.error("Erro ao buscar produtos por descrição '{}': {}", description, e.getMessage());
+      throw new RuntimeException("Falha ao buscar produtos por descrição", e);
     }
   }
 
-  /**
-   * Exemplo: Método utilitário para criar um payload padrão
-   */
-  public Map<String, Object> createProductPayload(String name, String description, double price) {
-    Map<String, Object> payload = new HashMap<>();
-    payload.put("name", name);
-    payload.put("description", description);
-    payload.put("price", price);
-    payload.put("timestamp", System.currentTimeMillis());
-    return payload;
-  }
 }
