@@ -4,7 +4,7 @@ spring:
 
   # Configuração do banco de dados para DOCKER
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://postgres:5432/stockflow_dev}
+    url: ${DATABASE_URL:jdbc:postgresql://postgres:5432/stockflow_local}
     username: ${DB_USERNAME:stockflow_user}
     password: ${DB_PASSWORD:stockflow_pass}
     driver-class-name: org.postgresql.Driver

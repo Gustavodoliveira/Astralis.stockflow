@@ -4,7 +4,7 @@ spring:
 
   # Configuração do banco de dados para PRODUÇÃO
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/stockflow_dev}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/stockflow_local}
     username: ${DB_USERNAME:stockflow_user}
     password: ${DB_PASSWORD:stockflow_pass}
     driver-class-name: org.postgresql.Driver

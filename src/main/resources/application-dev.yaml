@@ -4,7 +4,7 @@ spring:
 
   # Configuração do banco de dados para desenvolvimento local
   datasource:
-    url: jdbc:postgresql://localhost:5432/stockflow_dev
+    url: jdbc:postgresql://localhost:5432/stockflow_local
     username: ${DB_USERNAME:stockflow_user}
     password: ${DB_PASSWORD:stockflow_pass}
     driver-class-name: org.postgresql.Driver

@@ -6,7 +6,7 @@ services:
     image: postgres:15-alpine
     container_name: stockflow-postgres
     environment:
-      POSTGRES_DB: stockflow_dev
+      POSTGRES_DB: stockflow_local
       POSTGRES_USER: stockflow_user
       POSTGRES_PASSWORD: stockflow_pass
     ports:
@@ -17,7 +17,7 @@ services:
     networks:
       - stockflow-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U stockflow_user -d stockflow_dev"]
+      test: ["CMD-SHELL", "pg_isready -U stockflow_user -d stockflow_local"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,7 +35,7 @@ services:
       # Configurações do banco de dados
       DB_USERNAME: stockflow_user
       DB_PASSWORD: stockflow_pass
-      DATABASE_URL: jdbc:postgresql://postgres:5432/stockflow_dev
+      DATABASE_URL: jdbc:postgresql://postgres:5432/stockflow_local
       
       # Configurações da API externa
       EXTERNAL_API_BASE_URL: https://api.iniciativaaplicativos.com.br/api
