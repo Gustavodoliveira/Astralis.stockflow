@@ -2,7 +2,6 @@ package com.astralis.flow.stockflow_api.service;
 
 import java.util.UUID;
 
-import org.springframework.boot.webflux.autoconfigure.WebFluxProperties.Apiversion.Use;
 import org.springframework.stereotype.Service;
 
 import com.astralis.flow.stockflow_api.exception.OrderProductionNotExist;
@@ -31,6 +30,13 @@ public class OrderProductionService {
         .orElseThrow(() -> new UserNotExistException(orderProd.userId().toString()));
     var orderProduction = orderProductionRepository.save(orderProductionMapper.toEntity(orderProd, user));
     return orderProductionMapper.toResponse(orderProduction);
+  }
+
+  public java.util.List<OrderProductionResponse> getAllOrderProductions() {
+    var orderProductions = orderProductionRepository.findAll();
+    return orderProductions.stream()
+        .map(orderProductionMapper::toResponse)
+        .toList();
   }
 
   public OrderProductionResponse getOrderProductionById(String id) {
