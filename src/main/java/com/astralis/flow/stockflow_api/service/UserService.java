@@ -15,6 +15,7 @@ import com.astralis.flow.stockflow_api.exception.EmailAlreadyExistsException;
 import com.astralis.flow.stockflow_api.model.dtos.users.ChangePasswordDto;
 import com.astralis.flow.stockflow_api.model.dtos.users.CreateUserDto;
 import com.astralis.flow.stockflow_api.model.dtos.users.UpdateUserDto;
+import com.astralis.flow.stockflow_api.model.dtos.users.CreateUserWithTokenResponse;
 import com.astralis.flow.stockflow_api.model.dtos.users.UserResponse;
 import com.astralis.flow.stockflow_api.model.dtos.users.UserSummaryResponse;
 import com.astralis.flow.stockflow_api.model.mappers.UserMapper;
@@ -33,7 +34,9 @@ public class UserService {
 
   private final PasswordEncoder passwordEncoder;
 
-  public UserResponse createUser(CreateUserDto createUserDto) {
+  private final JwtService jwtService;
+
+  public CreateUserWithTokenResponse createUser(CreateUserDto createUserDto) {
     try {
       var userEntity = userMapper.toEntity(createUserDto);
       if (userRepository.existsByEmail(userEntity.getEmail()) == true) {
@@ -41,7 +44,11 @@ public class UserService {
       }
       userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
       var savedUser = userRepository.save(userEntity);
-      return userMapper.toResponse(savedUser);
+      var userResponse = userMapper.toResponse(savedUser);
+      var token = jwtService.generateToken(savedUser.getEmail());
+      return new CreateUserWithTokenResponse(userResponse, token);
+    } catch (EmailAlreadyExistsException e) {
+      throw e;
     } catch (Exception e) {
       throw new RuntimeException("Erro ao criar usuário: " + e.getMessage());
     }

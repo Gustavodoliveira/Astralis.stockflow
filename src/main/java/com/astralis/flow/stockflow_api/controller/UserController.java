@@ -5,7 +5,9 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -21,9 +23,9 @@ import com.astralis.flow.stockflow_api.model.dtos.users.ChangePasswordDto;
 import com.astralis.flow.stockflow_api.model.dtos.users.CreateUserDto;
 import com.astralis.flow.stockflow_api.model.dtos.users.UpdateUserDto;
 import com.astralis.flow.stockflow_api.model.dtos.users.UserSummaryResponse;
+import com.astralis.flow.stockflow_api.model.entities.User;
 import com.astralis.flow.stockflow_api.service.UserService;
 
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
@@ -44,7 +46,7 @@ public class UserController {
     return ResponseEntity.ok(userResponse);
   }
 
-  @GetMapping
+  @GetMapping("/getAll")
   public ResponseEntity<Object> getAllUsers(
       @RequestParam(value = "page", required = false) Integer page,
       @RequestParam(value = "size", required = false) Integer size) {
@@ -60,75 +62,66 @@ public class UserController {
   }
 
   @GetMapping("/{id}")
-  public ResponseEntity<Object> getUserById(@PathVariable UUID id) {
+  public ResponseEntity<Object> getUserById(@PathVariable UUID id, @AuthenticationPrincipal User loggedUser) {
     logger.info("Buscando usuário por ID: {}", id);
-    try {
-      var userResponse = userService.getUserById(id);
-      return ResponseEntity.ok(userResponse);
-    } catch (EntityNotFoundException e) {
-      logger.warn("Usuário não encontrado: {}", e.getMessage());
-      return ResponseEntity.notFound().build();
+
+    if (!loggedUser.getId().equals(id)) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
+
+    var userResponse = userService.getUserById(id);
+    return ResponseEntity.ok(userResponse);
   }
 
   @GetMapping("/email/{email}")
-  public ResponseEntity<Object> getUserByEmail(@PathVariable String email) {
+  public ResponseEntity<Object> getUserByEmail(@PathVariable String email, @AuthenticationPrincipal User loggedUser) {
     logger.info("Buscando usuário por email: {}", email);
-    try {
-      var userResponse = userService.findByEmail(email);
-      return ResponseEntity.ok(userResponse);
-    } catch (EntityNotFoundException e) {
-      logger.warn("Usuário não encontrado: {}", e.getMessage());
-      return ResponseEntity.notFound().build();
+
+    if (!loggedUser.getEmail().equals(email)) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
+
+    var userResponse = userService.findByEmail(email);
+    return ResponseEntity.ok(userResponse);
   }
 
   @PutMapping("/update/{id}")
-  public ResponseEntity<Object> updateUser(@PathVariable UUID id, @Valid @RequestBody UpdateUserDto updateUserDto) {
+  public ResponseEntity<Object> updateUser(@PathVariable UUID id, @Valid @RequestBody UpdateUserDto updateUserDto,
+      @AuthenticationPrincipal User loggedUser) {
     logger.info("Atualizando usuário com ID: {}", id);
-    try {
-      var userResponse = userService.updateUser(id, updateUserDto);
-      return ResponseEntity.ok(userResponse);
-    } catch (EntityNotFoundException e) {
-      logger.warn("Usuário não encontrado: {}", e.getMessage());
-      return ResponseEntity.notFound().build();
+
+    if (!loggedUser.getId().equals(id)) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
+
+    var userResponse = userService.updateUser(id, updateUserDto);
+    return ResponseEntity.ok(userResponse);
   }
 
   @PatchMapping("/{id}/password")
   public ResponseEntity<Object> changePassword(@PathVariable UUID id,
       @Valid @RequestBody ChangePasswordDto changePasswordDto) {
     logger.info("Alterando senha do usuário com ID: {}", id);
-    try {
-      userService.changePassword(id, changePasswordDto);
-      return ResponseEntity.ok().build();
-    } catch (EntityNotFoundException e) {
-      logger.warn("Usuário não encontrado: {}", e.getMessage());
-      return ResponseEntity.notFound().build();
-    }
+    userService.changePassword(id, changePasswordDto);
+    return ResponseEntity.ok().build();
   }
 
-  @DeleteMapping("/{id}")
-  public ResponseEntity<Object> deleteUser(@PathVariable UUID id) {
+  @DeleteMapping("/delete/{id}")
+  public ResponseEntity<Object> deleteUser(@PathVariable UUID id, @AuthenticationPrincipal User loggedUser) {
     logger.info("Deletando/desabilitando usuário com ID: {}", id);
-    try {
-      userService.deleteUser(id);
-      return ResponseEntity.noContent().build();
-    } catch (EntityNotFoundException e) {
-      logger.warn("Usuário não encontrado: {}", e.getMessage());
-      return ResponseEntity.notFound().build();
+
+    if (!loggedUser.getId().equals(id)) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
     }
+
+    userService.deleteUser(id);
+    return ResponseEntity.noContent().build();
   }
 
   @PatchMapping("/{id}/enable")
   public ResponseEntity<Object> enableUser(@PathVariable UUID id) {
     logger.info("Habilitando usuário com ID: {}", id);
-    try {
-      userService.enableUser(id);
-      return ResponseEntity.ok().build();
-    } catch (EntityNotFoundException e) {
-      logger.warn("Usuário não encontrado: {}", e.getMessage());
-      return ResponseEntity.notFound().build();
-    }
+    userService.enableUser(id);
+    return ResponseEntity.ok().build();
   }
 }

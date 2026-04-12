@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
 import io.micrometer.core.ipc.http.HttpSender.Response;
+import jakarta.persistence.EntityNotFoundException;
 
 @RestControllerAdvice
 public class GlobalHandlerException {
@@ -90,13 +91,27 @@ public class GlobalHandlerException {
       EmailAlreadyExistsException ex, WebRequest request) {
     ErrorResponse errorResponse = ErrorResponse.builder()
         .timestamp(LocalDateTime.now())
-        .status(HttpStatus.BAD_REQUEST.value())
+        .status(HttpStatus.CONFLICT.value())
         .error("Email já cadastrado")
         .message(ex.getMessage())
         .path(request.getDescription(false).replace("uri=", ""))
         .build();
 
     return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+  }
 
+  @ExceptionHandler(EntityNotFoundException.class)
+  public ResponseEntity<ErrorResponse> handleEntityNotFoundException(
+      EntityNotFoundException ex, WebRequest request) {
+
+    ErrorResponse errorResponse = ErrorResponse.builder()
+        .timestamp(LocalDateTime.now())
+        .status(HttpStatus.NOT_FOUND.value())
+        .error("Não Encontrado")
+        .message(ex.getMessage())
+        .path(request.getDescription(false).replace("uri=", ""))
+        .build();
+
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
   }
 }
