@@ -42,6 +42,17 @@ public class FilterSecurity {
             .requestMatchers(HttpMethod.PUT, "/users/update/{id}").authenticated()
             .requestMatchers(HttpMethod.PATCH, "/users/{id}/password").permitAll()
             .requestMatchers(HttpMethod.DELETE, "/users/delete/{id}").authenticated()
+
+            // stock request
+            .requestMatchers(HttpMethod.GET, "/stock/getLotByLocation/{location}").authenticated()
+            .requestMatchers(HttpMethod.GET, "/stock/getLotById/{Id}").authenticated()
+            .requestMatchers(HttpMethod.GET, "/stock/getItemByDescription/{description}").authenticated()
+
+            // Order request
+            .requestMatchers(HttpMethod.POST, "/order-production/create").authenticated()
+            .requestMatchers(HttpMethod.GET, "/order-production/get/{id}").authenticated()
+            .requestMatchers(HttpMethod.GET, "/order-production/getAll").authenticated()
+            .requestMatchers(HttpMethod.PUT, "/order-production/update/{id}").authenticated()
             .anyRequest().permitAll()
 
         ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
