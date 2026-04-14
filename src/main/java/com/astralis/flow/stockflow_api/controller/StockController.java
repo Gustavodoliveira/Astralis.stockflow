@@ -63,6 +63,17 @@ public class StockController {
     }
   }
 
+  @GetMapping("/getItemByCod/{cod}")
+  @Operation(summary = "Buscar produtos por código")
+  public ResponseEntity<List<ProductResponseDTO>> getItemByCod(@PathVariable String cod) {
+    try {
+      List<ProductResponseDTO> products = stockIntegrationService.getProductsByCod(cod);
+      return ResponseEntity.ok(products);
+    } catch (Exception e) {
+      return ResponseEntity.internalServerError().build();
+    }
+  }
+
   @GetMapping("/debug/config")
   @Operation(summary = "Debug: Verificar configuração da API externa")
   public ResponseEntity<Map<String, Object>> debugConfiguration() {

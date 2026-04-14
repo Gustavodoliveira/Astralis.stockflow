@@ -20,9 +20,9 @@ fix_flyway.sql
 !.env.example
 
 # === CONFIGURAÇÕES DE APLICAÇÃO ===
-# Permitir arquivos principais de configuração
-!src/main/resources/application*.yaml
-!src/main/resources/application*.yml
+# Arquivos de configuração com credenciais de dev
+src/main/resources/application-dev.yaml
+src/main/resources/application-dev.yml
 !docker-compose.yml
 !docker-compose.prod.yml
 

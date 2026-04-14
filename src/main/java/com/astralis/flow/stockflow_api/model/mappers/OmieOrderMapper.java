@@ -44,7 +44,10 @@ public class OmieOrderMapper {
               new BigDecimal(produto.path("valor_unitario").asText()),
               new BigDecimal(produto.path("valor_total").asText()),
               infAdic.path("peso_bruto").asDouble(),
-              infAdic.path("peso_liquido").asDouble()));
+              infAdic.path("peso_liquido").asDouble(),
+              null,
+              null,
+              null));
         }
 
         result.add(new OmieOrderDTO(
@@ -109,5 +112,40 @@ public class OmieOrderMapper {
     item.setPesoBruto(dto.pesoBruto());
     item.setPesoLiquido(dto.pesoLiquido());
     return item;
+  }
+
+  public OmieOrderDTO toDTO(OmieOrder order) {
+    List<OmieOrderItemDTO> itens = order.getItens() == null ? List.of()
+        : order.getItens().stream()
+            .map(item -> new OmieOrderItemDTO(
+                item.getCodigoProduto(),
+                item.getCodigo(),
+                item.getDescricao(),
+                item.getQuantidade(),
+                item.getUnidade(),
+                item.getValorUnitario(),
+                item.getValorTotal(),
+                item.getPesoBruto(),
+                item.getPesoLiquido(),
+                item.getNumeroLote(),
+                item.getDataValidadeLote(),
+                item.getQtdeProdutoLote()))
+            .toList();
+
+    return new OmieOrderDTO(
+        order.getCodigoPedido(),
+        order.getNumeroPedido(),
+        order.getCodigoCliente(),
+        order.getDataPrevisao(),
+        order.getEtapa(),
+        order.getQuantidadeItens(),
+        order.getDataInclusao(),
+        order.getDataAlteracao(),
+        order.getPesoBrutoTotal(),
+        order.getPesoLiquidoTotal(),
+        order.getQuantidadeVolumes(),
+        order.getMarcaVolumes(),
+        order.getEspecieVolumes(),
+        itens);
   }
 }

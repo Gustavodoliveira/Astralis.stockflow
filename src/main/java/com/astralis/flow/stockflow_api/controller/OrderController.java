@@ -1,9 +1,11 @@
 package com.astralis.flow.stockflow_api.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,5 +23,10 @@ public class OrderController {
   @GetMapping("/getOrders")
   public ResponseEntity<List<OmieOrderDTO>> getOrders() {
     return ResponseEntity.ok(orderIntegrationService.integrateOrder());
+  }
+
+  @GetMapping("/{id}")
+  public ResponseEntity<OmieOrderDTO> getOrderById(@PathVariable UUID id) {
+    return ResponseEntity.ok(orderIntegrationService.getOrderById(id));
   }
 }

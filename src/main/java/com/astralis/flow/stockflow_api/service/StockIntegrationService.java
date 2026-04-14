@@ -71,6 +71,27 @@ public class StockIntegrationService {
     }
   }
 
+  public List<ProductResponseDTO> getProductsByCod(String cod) {
+    logger.info("Buscando produtos da API externa por código: {}", cod);
+
+    try {
+      String jsonResponse = apiClient
+          .get("/engenharia/produtos/lista?offset=50&page=1&filters=identificacao|" + cod);
+
+      // Mapear resposta completa da API externa
+      GetProductsResponse fullResponse = objectMapper.readValue(jsonResponse, GetProductsResponse.class);
+
+      // Converter para DTOs limpos da nossa API
+      List<ProductResponseDTO> cleanProducts = productMapper.toResponseDTOList(fullResponse.response());
+
+      return cleanProducts;
+
+    } catch (Exception e) {
+      logger.error("Erro ao buscar produtos por código '{}': {}", cod, e.getMessage());
+      throw new RuntimeException("Falha ao buscar produtos por código", e);
+    }
+  }
+
   public List<ProductResponseDTO> getProductsByDescription(String description) {
     logger.info("Buscando produtos da API externa por descrição: {}", description);
 

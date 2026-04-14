@@ -11,5 +11,8 @@ public record OmieOrderItemDTO(
     BigDecimal valorUnitario,
     BigDecimal valorTotal,
     Double pesoBruto,
-    Double pesoLiquido) {
+    Double pesoLiquido,
+    String numeroLote,
+    String dataValidadeLote,
+    Integer qtdeProdutoLote) {
 }

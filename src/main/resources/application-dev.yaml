@@ -75,6 +75,6 @@ external:
 # Configurações da API Omie
 omie:
   api:
-    base-url: ${OMIE_API_BASE_URL:https://app.omie.com.br/api/v1}
-    app-key: ${OMIE_APP_KEY}
-    app-secret: ${OMIE_APP_SECRET}
+    base-url: https://app.omie.com.br/api/v1
+    app-key: 6646357020303
+    app-secret: 13affaa496f1e87ec166803effd07754
