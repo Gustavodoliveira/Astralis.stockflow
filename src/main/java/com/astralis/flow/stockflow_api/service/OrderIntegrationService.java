@@ -88,7 +88,7 @@ public class OrderIntegrationService {
     return saved;
   }
 
-  private String setLotInOrder(SetLotInOrderRequestDTO dto) {
+  public String setLotInOrder(SetLotInOrderRequestDTO dto) {
     try {
       String json = objectMapper.writeValueAsString(dto.param());
       List<Map<String, Object>> params = objectMapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {
@@ -99,7 +99,7 @@ public class OrderIntegrationService {
     }
   }
 
-  private String setOrderFat(TrocarEtapaOrderRequestDTO dto) {
+  public String setOrderFat(TrocarEtapaOrderRequestDTO dto) {
     try {
       String json = objectMapper.writeValueAsString(dto);
       Map<String, Object> params = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {
