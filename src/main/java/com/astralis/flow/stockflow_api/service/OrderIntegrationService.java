@@ -3,27 +3,26 @@ package com.astralis.flow.stockflow_api.service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.astralis.flow.stockflow_api.client.OmieApiClient;
+import com.astralis.flow.stockflow_api.client.ExternalApiClient;
 import com.astralis.flow.stockflow_api.model.dtos.external.lot.LoteResponseDto;
-import com.astralis.flow.stockflow_api.model.dtos.external.orders.OmieOrderDTO;
-import com.astralis.flow.stockflow_api.model.dtos.external.orders.SetLotInOrderRequestDTO;
-import com.astralis.flow.stockflow_api.model.dtos.external.orders.TrocarEtapaOrderRequestDTO;
 import com.astralis.flow.stockflow_api.model.dtos.external.products.ProductResponseDTO;
-import com.astralis.flow.stockflow_api.model.entities.OmieOrder;
-import com.astralis.flow.stockflow_api.model.mappers.OmieOrderMapper;
-import com.astralis.flow.stockflow_api.repository.OmieOrderRepository;
+import com.astralis.flow.stockflow_api.model.dtos.external.orders.ExternalOrderDTO;
+import com.astralis.flow.stockflow_api.model.dtos.external.orders.ExternalOrderResponseDTO;
+import com.astralis.flow.stockflow_api.model.dtos.external.orders.GetOrdersResponse;
+import com.astralis.flow.stockflow_api.model.entities.ExternalOrder;
+import com.astralis.flow.stockflow_api.model.entities.ExternalOrderItem;
+import com.astralis.flow.stockflow_api.model.mappers.ExternalOrderMapper;
+import com.astralis.flow.stockflow_api.repository.ExternalOrderItemRepository;
+import com.astralis.flow.stockflow_api.repository.ExternalOrderRepository;
 
 import lombok.AllArgsConstructor;
 
@@ -31,149 +30,171 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class OrderIntegrationService {
 
-  private final OmieApiClient omieApiClient;
-  private final OmieOrderMapper omieOrderMapper;
-  private final OmieOrderRepository omieOrderRepository;
-  private final StockIntegrationService stockIntegrationService;
-  private final ObjectMapper objectMapper;
-
   private static final Logger logger = LoggerFactory.getLogger(OrderIntegrationService.class);
-  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-  public List<OmieOrderDTO> integrateOrder() {
-    String jsonResponse = omieApiClient.call("ListarPedidos", Map.of("etapa", "20"));
-    logger.info("Resposta recebida da API externa para pedidos: {}", jsonResponse);
+  private final ExternalApiClient externalApiClient;
+  private final ObjectMapper objectMapper;
+  private final ExternalOrderRepository externalOrderRepository;
+  private final ExternalOrderItemRepository externalOrderItemRepository;
+  private final ExternalOrderMapper externalOrderMapper;
+  private final StockIntegrationService stockIntegrationService;
 
-    List<OmieOrderDTO> dtos = omieOrderMapper.fromJson(jsonResponse);
-    Map<String, Long> productIdCache = new HashMap<>();
-
-    List<OmieOrderDTO> result = new ArrayList<>();
-    for (OmieOrderDTO dto : dtos) {
-      OmieOrder orderEntity = omieOrderMapper.toEntity(dto);
-      enrichItensWithLote(orderEntity, productIdCache);
-      OmieOrder saved = saveOrUpdate(orderEntity, dto.codigoPedido());
-      result.add(omieOrderMapper.toDTO(saved));
-    }
-    return result;
+  public ExternalOrderResponseDTO getOrderById(UUID orderId) {
+    ExternalOrder order = externalOrderRepository.findByIdWithItens(orderId)
+        .orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + orderId));
+    return toResponseDTO(order);
   }
 
-  public OmieOrderDTO getOrderById(UUID id) {
-    return omieOrderRepository.findById(id)
-        .map(omieOrderMapper::toDTO)
-        .orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + id));
-  }
+  @Transactional
+  public ExternalOrderResponseDTO assignSeparador(UUID orderId, UUID userId) {
+    ExternalOrder order = externalOrderRepository.findByIdWithItens(orderId)
+        .orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + orderId));
 
-  private OmieOrderDTO integrateOrderByCod(String cod) {
-    String jsonResponse = omieApiClient.call("ConsultarPedido", Map.of("codigo_pedido", cod));
-    List<OmieOrderDTO> dtos = omieOrderMapper.fromJson(jsonResponse);
-    if (dtos.isEmpty()) {
-      return null;
-    }
-    OmieOrderDTO dto = dtos.get(0);
-    OmieOrder orderEntity = omieOrderMapper.toEntity(dto);
-    enrichItensWithLote(orderEntity, new HashMap<>());
-    return omieOrderMapper.toDTO(orderEntity);
-  }
+    order.setUserId(userId);
+    logger.info("Separador {} atribuído ao pedido {}", userId, orderId);
 
-  private OmieOrder saveOrUpdate(OmieOrder orderEntity, Long codigoPedido) {
-    if (omieOrderRepository.existsByCodigoPedido(codigoPedido)) {
-      logger.info("Pedido {} já existe no banco, atualizando.", codigoPedido);
-      OmieOrder existing = omieOrderRepository.findByCodigoPedido(codigoPedido).get();
-      orderEntity.setId(existing.getId());
-      if (existing.getItens() != null)
-        existing.getItens().clear();
-    }
-    OmieOrder saved = omieOrderRepository.save(orderEntity);
-    logger.info("Pedido {} salvo no banco.", codigoPedido);
-    return saved;
-  }
+    if (order.getItens() != null) {
+      for (ExternalOrderItem item : order.getItens()) {
+        String produtoApiId = String.valueOf(item.getProduto());
 
-  public String setLotInOrder(SetLotInOrderRequestDTO dto) {
-    try {
-      String json = objectMapper.writeValueAsString(dto.param());
-      List<Map<String, Object>> params = objectMapper.readValue(json, new TypeReference<List<Map<String, Object>>>() {
-      });
-      return omieApiClient.call("IncluirPedCompra", params);
-    } catch (Exception e) {
-      throw new RuntimeException("Erro ao serializar parâmetros para a API Omie", e);
-    }
-  }
-
-  public String setOrderFat(TrocarEtapaOrderRequestDTO dto) {
-    try {
-      String json = objectMapper.writeValueAsString(dto);
-      Map<String, Object> params = objectMapper.readValue(json, new TypeReference<Map<String, Object>>() {
-      });
-      return omieApiClient.call("TrocarEtapaPedido", params);
-    } catch (Exception e) {
-      throw new RuntimeException("Erro ao serializar parâmetros para a API Omie", e);
-    }
-  }
-
-  private void enrichItensWithLote(OmieOrder order, Map<String, Long> productIdCache) {
-    if (order.getItens() == null || order.getItens().isEmpty())
-      return;
-
-    order.getItens().forEach(item -> {
-      try {
-        String codigo = item.getCodigo();
-        Long productId;
-
-        if (productIdCache.containsKey(codigo)) {
-          productId = productIdCache.get(codigo);
-          logger.info("Cache hit: produto código '{}' -> id={}", codigo, productId);
-        } else {
-          List<ProductResponseDTO> products = stockIntegrationService.getProductsByCod(codigo);
-
-          if (products == null || products.isEmpty()) {
-            logger.warn("Nenhum produto encontrado no iApp para código '{}'", codigo);
-            return;
+        try {
+          List<ProductResponseDTO> produtos = stockIntegrationService
+              .getProductsById(produtoApiId);
+          if (!produtos.isEmpty()) {
+            ProductResponseDTO produto = produtos.get(0);
+            item.setNomeProduto(produto.descricao());
+            item.setUnidade(produto.unidadeMedida());
+            item.setTipoProduto(produto.tipo());
+            produtoApiId = String.valueOf(produto.id());
+            logger.info("Produto {} ({}) atribuído ao item {} (id API: {})", produto.descricao(),
+                produto.unidadeMedida(),
+                item.getId(), produtoApiId);
           }
+        } catch (Exception e) {
+          logger.error("Erro ao buscar produto {} para o item {}: {}", item.getProduto(), item.getId(), e.getMessage());
+        }
 
-          ProductResponseDTO activeProduct = products.stream()
-              .filter(p -> "ativo".equalsIgnoreCase(p.status()))
+        try {
+          List<LoteResponseDto> lotes = stockIntegrationService.getLotesById(produtoApiId);
+          logger.info("Lotes retornados pela API para o produto {} (id API: {}): {}", item.getProduto(), produtoApiId,
+              lotes);
+          LoteResponseDto lote = lotes.stream()
+              .filter(l -> l.saldo() != null && l.saldo() > 0 && isLoteValido(l))
               .findFirst()
               .orElse(null);
 
-          if (activeProduct == null) {
-            logger.warn("Nenhum produto ativo encontrado no iApp para código '{}'", codigo);
-            return;
+          if (lote != null) {
+            item.setLote(lote.identificacao());
+            item.setDataValidade(lote.dataValidade());
+            item.setLocalizacao(lote.localizacao());
+            logger.info("Lote {} atribuído ao item {} (produto {})", lote.identificacao(), item.getId(),
+                item.getProduto());
+          } else {
+            item.setLote(null);
+            item.setDataValidade(null);
+            item.setLocalizacao(null);
+            logger.warn("Nenhum lote com saldo disponível para o produto {}", item.getProduto());
           }
-
-          productId = activeProduct.id();
-          productIdCache.put(codigo, productId);
-          logger.info("Cache miss: produto código '{}' consultado no iApp -> id={}", codigo, productId);
+        } catch (Exception e) {
+          logger.error("Erro ao buscar lote para o produto {}: {}", item.getProduto(), e.getMessage());
         }
 
-        List<LoteResponseDto> lotes = stockIntegrationService.getLotesById(String.valueOf(productId));
-
-        if (lotes == null || lotes.isEmpty()) {
-          logger.warn("Nenhum lote encontrado para produtoId={}", productId);
-          return;
-        }
-
-        LoteResponseDto nearestLote = lotes.stream()
-            .filter(l -> l.dataValidade() != null && !l.dataValidade().isBlank())
-            .filter(l -> LocalDate.parse(l.dataValidade(), DATE_FORMATTER).isAfter(LocalDate.now()))
-            .min(Comparator.comparing(l -> LocalDate.parse(l.dataValidade(), DATE_FORMATTER)))
-            .orElse(null);
-
-        if (nearestLote == null) {
-          logger.warn("Nenhum lote com data de validade válida para produtoId={}", productId);
-          return;
-        }
-
-        item.setNumeroLote(nearestLote.identificacao());
-        item.setDataValidadeLote(nearestLote.dataValidade());
-        item.setQtdeProdutoLote(nearestLote.saldo());
-
-        logger.info("Lote mais próximo salvo para produto '{}': lote={}, validade={}, saldo={}",
-            codigo, nearestLote.identificacao(), nearestLote.dataValidade(), nearestLote.saldo());
-
-      } catch (Exception e) {
-        logger.warn("Erro ao buscar lote para produto '{}': {}", item.getCodigo(), e.getMessage());
+        externalOrderItemRepository.save(item);
       }
-    });
+    }
+
+    ExternalOrder saved = externalOrderRepository.save(order);
+    return toResponseDTO(externalOrderRepository.findByIdWithItens(saved.getId()).get());
   }
 
+  private ExternalOrderResponseDTO toResponseDTO(ExternalOrder order) {
+    List<ExternalOrderResponseDTO.ItemDTO> itens = order.getItens() == null ? List.of()
+        : order.getItens().stream()
+            .map(item -> new ExternalOrderResponseDTO.ItemDTO(
+                item.getId(),
+                item.getExternalItemId(),
+                item.getProduto(),
+                item.getNomeProduto(),
+                item.getTipoProduto(),
+                item.getQtde(),
+                item.getValorUnitario(),
+                item.getUnidade(),
+                item.getDadosAdicionais(),
+                item.getObsItem(),
+                item.getPesoBruto(),
+                item.getPesoLiquido(),
+                item.getLote(),
+                item.getDataValidade(),
+                item.getLocalizacao()))
+            .toList();
+
+    return new ExternalOrderResponseDTO(
+        order.getId(),
+        order.getExternalId(),
+        order.getNumeroPedido(),
+        order.getCliente(),
+        order.getStatus(),
+        order.getStatusInterno(),
+        order.getXped(),
+        order.getEspecieVolumes(),
+        order.getQtdeVolumes(),
+        order.getDataPrevisao(),
+        order.getDataCriacao(),
+        order.getDataUltimaAtualizacao(),
+        order.getValorFrete(),
+        order.getValorTotal(),
+        order.getLocalizacao(),
+        order.getUserId(),
+        itens);
+  }
+
+  private boolean isLoteValido(LoteResponseDto lote) {
+    if (lote.dataValidade() == null || lote.dataValidade().isBlank()) {
+      return true;
+    }
+    List<DateTimeFormatter> formatters = List.of(
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    for (DateTimeFormatter formatter : formatters) {
+      try {
+        LocalDate validade = LocalDate.parse(lote.dataValidade(), formatter);
+        boolean valido = !validade.isBefore(LocalDate.now());
+        if (!valido) {
+          logger.warn("Lote {} vencido em {}, ignorando", lote.identificacao(), lote.dataValidade());
+        }
+        return valido;
+      } catch (DateTimeParseException ignored) {
+      }
+    }
+    logger.warn("Formato de dataValidade não reconhecido para o lote {}: '{}', considerando válido",
+        lote.identificacao(), lote.dataValidade());
+    return true;
+  }
+
+  public List<ExternalOrder> syncOrders() {
+    try {
+      String json = externalApiClient.get("/comercial/pvendas/lista?offset=50&page=1&filters=status|stock");
+      GetOrdersResponse wrapper = objectMapper.readValue(json, GetOrdersResponse.class);
+      List<ExternalOrderDTO> dtos = wrapper.response();
+
+      return dtos.stream()
+          .map(dto -> {
+            ExternalOrder entity = externalOrderMapper.toEntity(dto);
+            if (externalOrderRepository.existsByExternalId(dto.id())) {
+              ExternalOrder existing = externalOrderRepository.findByExternalId(dto.id()).get();
+              entity.setId(existing.getId());
+              if (existing.getItens() != null)
+                existing.getItens().clear();
+              logger.info("Pedido externo {} atualizado.", dto.id());
+            } else {
+              logger.info("Pedido externo {} inserido.", dto.id());
+            }
+            return externalOrderRepository.save(entity);
+          })
+          .toList();
+    } catch (Exception e) {
+      logger.error("Erro ao sincronizar pedidos externos: {}", e.getMessage(), e);
+      throw new RuntimeException("Erro ao sincronizar pedidos externos", e);
+    }
+  }
 }
