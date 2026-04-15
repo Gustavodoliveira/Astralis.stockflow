@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.astralis.flow.stockflow_api.client.ExternalApiClient;
+import com.astralis.flow.stockflow_api.model.dtos.external.client.ClientResponseDTO;
 import com.astralis.flow.stockflow_api.model.dtos.external.lot.LoteResponseDto;
 import com.astralis.flow.stockflow_api.model.dtos.external.products.ProductResponseDTO;
 import com.astralis.flow.stockflow_api.model.dtos.external.orders.ExternalOrderDTO;
@@ -133,6 +134,7 @@ public class OrderIntegrationService {
         order.getExternalId(),
         order.getNumeroPedido(),
         order.getCliente(),
+        order.getNomeCliente(),
         order.getStatus(),
         order.getStatusInterno(),
         order.getXped(),
@@ -174,12 +176,28 @@ public class OrderIntegrationService {
   public List<ExternalOrder> syncOrders() {
     try {
       String json = externalApiClient.get("/comercial/pvendas/lista?offset=50&page=1&filters=status|stock");
+      logger.info("Resposta bruta da API de pedidos: {}", json);
       GetOrdersResponse wrapper = objectMapper.readValue(json, GetOrdersResponse.class);
       List<ExternalOrderDTO> dtos = wrapper.response();
 
       return dtos.stream()
           .map(dto -> {
             ExternalOrder entity = externalOrderMapper.toEntity(dto);
+
+            try {
+              List<ClientResponseDTO> clientes = stockIntegrationService.getClientById(String.valueOf(dto.cliente()));
+              if (!clientes.isEmpty()) {
+                String nome = clientes.get(0).razaoSocial() != null
+                    ? clientes.get(0).razaoSocial()
+                    : clientes.get(0).nomeFantasia();
+                entity.setNomeCliente(nome);
+                logger.info("Cliente {} ({}) vinculado ao pedido {}", dto.cliente(), nome, dto.id());
+              }
+            } catch (Exception e) {
+              logger.error("Erro ao buscar nome do cliente {} para o pedido {}: {}", dto.cliente(), dto.id(),
+                  e.getMessage());
+            }
+
             if (externalOrderRepository.existsByExternalId(dto.id())) {
               ExternalOrder existing = externalOrderRepository.findByExternalId(dto.id()).get();
               entity.setId(existing.getId());
@@ -195,6 +213,17 @@ public class OrderIntegrationService {
     } catch (Exception e) {
       logger.error("Erro ao sincronizar pedidos externos: {}", e.getMessage(), e);
       throw new RuntimeException("Erro ao sincronizar pedidos externos", e);
+    }
+  }
+
+  public String getRawSyncOrders() {
+    try {
+      String json = externalApiClient.get("/comercial/pvendas/lista?offset=50&page=1&filters=status|stock");
+      logger.info("Resposta bruta da API de pedidos: {}", json);
+      return json;
+    } catch (Exception e) {
+      logger.error("Erro ao buscar resposta bruta dos pedidos: {}", e.getMessage(), e);
+      throw new RuntimeException("Erro ao buscar resposta bruta dos pedidos", e);
     }
   }
 }

@@ -1,12 +1,13 @@
 package com.astralis.flow.stockflow_api.service;
 
 import com.astralis.flow.stockflow_api.client.ExternalApiClient;
-import com.astralis.flow.stockflow_api.model.dtos.external.products.GetProducts;
+import com.astralis.flow.stockflow_api.model.dtos.external.client.ClientResponseDTO;
+import com.astralis.flow.stockflow_api.model.dtos.external.client.GetClientsResponse;
 import com.astralis.flow.stockflow_api.model.dtos.external.products.GetProductsResponse;
 import com.astralis.flow.stockflow_api.model.dtos.external.products.ProductResponseDTO;
-import com.astralis.flow.stockflow_api.model.dtos.external.lot.GetLote;
 import com.astralis.flow.stockflow_api.model.dtos.external.lot.GetLotesResponse;
 import com.astralis.flow.stockflow_api.model.dtos.external.lot.LoteResponseDto;
+import com.astralis.flow.stockflow_api.model.mappers.external.ClientMapper;
 import com.astralis.flow.stockflow_api.model.mappers.external.ProductMapper;
 import com.astralis.flow.stockflow_api.model.mappers.external.LoteMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,9 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Exemplo de service específico que usa o ExternalApiClient
@@ -33,14 +32,16 @@ public class StockIntegrationService {
   private final ObjectMapper objectMapper;
   private final ProductMapper productMapper;
   private final LoteMapper loteMapper;
+  private final ClientMapper clientMapper;
 
   @Autowired
   public StockIntegrationService(ExternalApiClient apiClient, ObjectMapper objectMapper,
-      ProductMapper productMapper, LoteMapper loteMapper) {
+      ProductMapper productMapper, LoteMapper loteMapper, ClientMapper clientMapper) {
     this.apiClient = apiClient;
     this.objectMapper = objectMapper;
     this.productMapper = productMapper;
     this.loteMapper = loteMapper;
+    this.clientMapper = clientMapper;
   }
 
   public String getExternalItemsByLocation(String localização) {
@@ -171,6 +172,27 @@ public class StockIntegrationService {
     } catch (Exception e) {
       logger.error("Erro ao buscar lotes por ID do produto '{}': {}", id, e.getMessage());
       throw new RuntimeException("Falha ao buscar lotes por ID do produto", e);
+    }
+  }
+
+  public List<ClientResponseDTO> getClientById(String id) {
+    logger.info("Buscando cliente da API externa por ID: {}", id);
+    try {
+      String jsonResponse = apiClient
+          .get("/comercial/clientes/busca/" + id);
+
+      logger.info("Resposta bruta da API de clientes para id {}: {}", id, jsonResponse);
+
+      GetClientsResponse fullResponse = objectMapper.readValue(jsonResponse, GetClientsResponse.class);
+      List<ClientResponseDTO> clients = fullResponse.response() != null
+          ? List.of(clientMapper.toResponseDTO(fullResponse.response()))
+          : List.of();
+
+      logger.info("Cliente(s) retornado(s) para id {}: {}", id, clients.size());
+      return clients;
+    } catch (Exception e) {
+      logger.error("Erro ao buscar cliente por ID '{}': {}", id, e.getMessage());
+      throw new RuntimeException("Falha ao buscar cliente por ID", e);
     }
   }
 

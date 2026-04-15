@@ -9,6 +9,7 @@ public record ExternalOrderResponseDTO(
     Long externalId,
     String numeroPedido,
     Long cliente,
+    String nomeCliente,
     String status,
     String statusInterno,
     String xped,

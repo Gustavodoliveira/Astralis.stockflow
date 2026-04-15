@@ -35,6 +35,11 @@ public class OrderController {
     return ResponseEntity.ok(orderIntegrationService.syncOrders());
   }
 
+  @GetMapping("/sync/raw")
+  public ResponseEntity<String> syncOrdersRaw() {
+    return ResponseEntity.ok(orderIntegrationService.getRawSyncOrders());
+  }
+
   @PatchMapping("/{id}/separador")
   public ResponseEntity<ExternalOrderResponseDTO> assignSeparador(
       @PathVariable UUID id,

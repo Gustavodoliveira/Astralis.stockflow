@@ -1,12 +1,12 @@
 package com.astralis.flow.stockflow_api.controller;
 
 import com.astralis.flow.stockflow_api.config.ExternalApiConfig;
+import com.astralis.flow.stockflow_api.model.dtos.external.client.ClientResponseDTO;
 import com.astralis.flow.stockflow_api.model.dtos.external.products.ProductResponseDTO;
 import com.astralis.flow.stockflow_api.model.dtos.external.lot.LoteResponseDto;
 import com.astralis.flow.stockflow_api.service.StockIntegrationService;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.models.examples.Example;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -80,6 +80,17 @@ public class StockController {
     try {
       List<ProductResponseDTO> products = stockIntegrationService.getProductsById(id);
       return ResponseEntity.ok(products);
+    } catch (Exception e) {
+      return ResponseEntity.internalServerError().build();
+    }
+  }
+
+  @GetMapping("/getClientById/{id}")
+  @Operation(summary = "Buscar cliente por ID")
+  public ResponseEntity<List<ClientResponseDTO>> getClientById(@PathVariable String id) {
+    try {
+      List<ClientResponseDTO> clients = stockIntegrationService.getClientById(id);
+      return ResponseEntity.ok(clients);
     } catch (Exception e) {
       return ResponseEntity.internalServerError().build();
     }

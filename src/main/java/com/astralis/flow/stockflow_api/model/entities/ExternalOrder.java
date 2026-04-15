@@ -90,6 +90,9 @@ public class ExternalOrder {
   @Column(name = "localizacao", length = 255)
   private String localizacao;
 
+  @Column(name = "nome_cliente", length = 255)
+  private String nomeCliente;
+
   @OneToMany(mappedBy = "externalOrder", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
   private List<ExternalOrderItem> itens;
 }
