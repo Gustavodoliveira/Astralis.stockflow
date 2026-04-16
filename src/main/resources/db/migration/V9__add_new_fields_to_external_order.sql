@@ -1,8 +1,0 @@
-ALTER TABLE external_order_item
-    ADD COLUMN IF NOT EXISTS lote VARCHAR(100),
-    ADD COLUMN IF NOT EXISTS data_validade VARCHAR(30);
-
-ALTER TABLE external_order
-    ADD COLUMN IF NOT EXISTS user_id UUID,
-    ADD COLUMN IF NOT EXISTS status_interno VARCHAR(50),
-    ADD COLUMN IF NOT EXISTS localizacao VARCHAR(255);

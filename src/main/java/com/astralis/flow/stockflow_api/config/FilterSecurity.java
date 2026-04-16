@@ -34,6 +34,9 @@ public class FilterSecurity {
         .csrf(csrf -> csrf.disable())
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
+            // actuator health (Docker healthcheck)
+            .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
+
             // request user
             .requestMatchers(HttpMethod.POST, "/users/create").permitAll()
             .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
