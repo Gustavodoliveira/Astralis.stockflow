@@ -4,6 +4,7 @@ import com.astralis.flow.stockflow_api.config.ExternalApiConfig;
 import com.astralis.flow.stockflow_api.model.dtos.external.client.ClientResponseDTO;
 import com.astralis.flow.stockflow_api.model.dtos.external.products.ProductResponseDTO;
 import com.astralis.flow.stockflow_api.model.dtos.external.lot.LoteResponseDto;
+import com.astralis.flow.stockflow_api.model.dtos.external.lot.LoteWithProductResponseDto;
 import com.astralis.flow.stockflow_api.service.StockIntegrationService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,9 +33,9 @@ public class StockController {
 
   @GetMapping("/getLotByLocation/{location}")
   @Operation(summary = "Buscar lotes por localização")
-  public ResponseEntity<List<LoteResponseDto>> getLotByLocation(@PathVariable String location) {
+  public ResponseEntity<List<LoteWithProductResponseDto>> getLotByLocation(@PathVariable String location) {
     try {
-      List<LoteResponseDto> lotes = stockIntegrationService.getLotesByLocation(location);
+      List<LoteWithProductResponseDto> lotes = stockIntegrationService.getLotesByLocationWithProduct(location);
       return ResponseEntity.ok(lotes);
     } catch (Exception e) {
       return ResponseEntity.internalServerError().build();
@@ -42,10 +43,21 @@ public class StockController {
   }
 
   @GetMapping("/getLotById/{Id}")
-  @Operation(summary = "Buscar lotes por ID do produto")
+  @Operation(summary = "Buscar lote por ID do lote")
   public ResponseEntity<List<LoteResponseDto>> getLotById(@PathVariable String Id) {
     try {
       List<LoteResponseDto> lotes = stockIntegrationService.getLotesById(Id);
+      return ResponseEntity.ok(lotes);
+    } catch (Exception e) {
+      return ResponseEntity.internalServerError().build();
+    }
+  }
+
+  @GetMapping("/getLotesByProductId/{id}")
+  @Operation(summary = "Buscar lotes por ID do produto")
+  public ResponseEntity<List<LoteResponseDto>> getLotesByProductId(@PathVariable String id) {
+    try {
+      List<LoteResponseDto> lotes = stockIntegrationService.getLotesByProductId(id);
       return ResponseEntity.ok(lotes);
     } catch (Exception e) {
       return ResponseEntity.internalServerError().build();

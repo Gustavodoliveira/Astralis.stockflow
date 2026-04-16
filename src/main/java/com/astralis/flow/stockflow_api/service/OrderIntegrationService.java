@@ -76,7 +76,7 @@ public class OrderIntegrationService {
         }
 
         try {
-          List<LoteResponseDto> lotes = stockIntegrationService.getLotesById(produtoApiId);
+          List<LoteResponseDto> lotes = stockIntegrationService.getLotesByProductId(produtoApiId);
           logger.info("Lotes retornados pela API para o produto {} (id API: {}): {}", item.getProduto(), produtoApiId,
               lotes);
           LoteResponseDto lote = lotes.stream()

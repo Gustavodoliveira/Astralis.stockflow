@@ -65,17 +65,17 @@ class OrderProductionItemsServiceTest {
     dto = new CreateOrderProductionItemRequest(
         orderId, ItemType.Input, "EXT-001", "Produto A", "kg",
         new BigDecimal("10.500"), new BigDecimal("2.300"),
-        "LOTE-001", LocalDate.now(), LocalDate.now().plusDays(365));
+        "LOTE-001", null, LocalDate.now(), LocalDate.now().plusDays(365));
 
     item = new OrderProductionItems(
         itemId, orderProduction, ItemType.Input, "EXT-001", "Produto A",
         "kg", new BigDecimal("10.500"), new BigDecimal("2.300"),
-        "LOTE-001", LocalDate.now(), LocalDate.now().plusDays(365));
+        "LOTE-001", null, LocalDate.now(), LocalDate.now().plusDays(365));
 
     itemResponse = new OrderProductionItemResponse(
         itemId, orderId, ItemType.Input, "EXT-001", "Produto A",
         "kg", new BigDecimal("10.500"), new BigDecimal("2.300"),
-        "LOTE-001", LocalDate.now(), LocalDate.now().plusDays(365));
+        "LOTE-001", null, LocalDate.now(), LocalDate.now().plusDays(365));
   }
 
   // --- createOrderProductionItems ---

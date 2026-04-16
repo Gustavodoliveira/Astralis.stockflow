@@ -2,7 +2,6 @@ package com.astralis.flow.stockflow_api.model.dtos.order_production_items;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.UUID;
 
 import com.astralis.flow.stockflow_api.model.enums.ItemType;
 
@@ -11,9 +10,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record CreateOrderProductionItemRequest(
-
-    @NotNull(message = "ID da ordem é obrigatório") UUID orderId,
+public record CreateOrderProductionItemPayload(
 
     @NotNull(message = "Tipo do item é obrigatório") ItemType itemType,
 

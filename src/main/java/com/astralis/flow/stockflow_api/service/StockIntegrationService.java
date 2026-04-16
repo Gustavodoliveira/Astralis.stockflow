@@ -16,7 +16,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.astralis.flow.stockflow_api.model.dtos.external.lot.LoteWithProductResponseDto;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Exemplo de service específico que usa o ExternalApiClient
@@ -155,11 +157,56 @@ public class StockIntegrationService {
     }
   }
 
-  public List<LoteResponseDto> getLotesById(String id) {
+  public List<LoteWithProductResponseDto> getLotesByLocationWithProduct(String localizacao) {
+    logger.info("Buscando lotes com produto da API externa por localização: {}", localizacao);
+    try {
+      List<LoteResponseDto> lotes = getLotesByLocation(localizacao);
+
+      return lotes.stream().map(lote -> {
+        String produtoNome = null;
+        if (lote.produtoId() != null) {
+          try {
+            List<ProductResponseDTO> produtos = getProductsById(String.valueOf(lote.produtoId()));
+            if (!produtos.isEmpty()) {
+              produtoNome = produtos.get(0).descricao();
+            }
+          } catch (Exception ex) {
+            logger.warn("Não foi possível buscar produto id={}: {}", lote.produtoId(), ex.getMessage());
+          }
+        }
+        return LoteWithProductResponseDto.from(lote, produtoNome);
+      }).collect(Collectors.toList());
+    } catch (Exception e) {
+      logger.error("Erro ao buscar lotes com produto por localização '{}': {}", localizacao, e.getMessage());
+      throw new RuntimeException("Falha ao buscar lotes com produto por localização", e);
+    }
+  }
+
+  public List<LoteResponseDto> getLotesByProductId(String id) {
     logger.info("Buscando lotes da API externa por ID do produto: {}", id);
     try {
       String jsonResponse = apiClient
           .get("/apontamentos/estoques/lotes/lista/?offset=50&page=1&filters=produtos|" + id);
+
+      // Mapear resposta completa da API externa
+      GetLotesResponse fullResponse = objectMapper.readValue(jsonResponse, GetLotesResponse.class);
+
+      // Converter para DTOs limpos da nossa API
+      List<LoteResponseDto> cleanLotes = loteMapper.toResponseDTOList(fullResponse.response());
+
+      logger.info("Convertidos {} lotes para resposta limpa", cleanLotes.size());
+      return cleanLotes;
+    } catch (Exception e) {
+      logger.error("Erro ao buscar lotes por ID do produto '{}': {}", id, e.getMessage());
+      throw new RuntimeException("Falha ao buscar lotes por ID do produto", e);
+    }
+  }
+
+  public List<LoteResponseDto> getLotesById(String id) {
+    logger.info("Buscando lotes da API externa por ID do produto: {}", id);
+    try {
+      String jsonResponse = apiClient
+          .get("/apontamentos/estoques/lotes/busca/" + id);
 
       // Mapear resposta completa da API externa
       GetLotesResponse fullResponse = objectMapper.readValue(jsonResponse, GetLotesResponse.class);

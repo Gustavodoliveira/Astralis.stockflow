@@ -36,24 +36,33 @@ public class FilterSecurity {
         .authorizeHttpRequests(auth -> auth
             // request user
             .requestMatchers(HttpMethod.POST, "/users/create").permitAll()
+            .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
             .requestMatchers(HttpMethod.GET, "/users/getAll").hasRole("ADMIN")
             .requestMatchers(HttpMethod.GET, "/users/{id}").authenticated()
-            .requestMatchers(HttpMethod.GET, "/users/email/{email}").permitAll()
+            .requestMatchers(HttpMethod.GET, "/users/email/{email}").authenticated()
             .requestMatchers(HttpMethod.PUT, "/users/update/{id}").authenticated()
-            .requestMatchers(HttpMethod.PATCH, "/users/{id}/password").permitAll()
+            .requestMatchers(HttpMethod.PATCH, "/users/{id}/password").authenticated()
             .requestMatchers(HttpMethod.DELETE, "/users/delete/{id}").authenticated()
 
             // stock request
             .requestMatchers(HttpMethod.GET, "/stock/getLotByLocation/{location}").authenticated()
             .requestMatchers(HttpMethod.GET, "/stock/getLotById/{Id}").authenticated()
+            .requestMatchers(HttpMethod.GET, "/stock/getLotesByProductId/{id}").authenticated()
             .requestMatchers(HttpMethod.GET, "/stock/getItemByDescription/{description}").authenticated()
+            .requestMatchers(HttpMethod.GET, "/stock/getItemByCod/{cod}").authenticated()
+            .requestMatchers(HttpMethod.GET, "/stock/getItemById/{id}").authenticated()
+            .requestMatchers(HttpMethod.GET, "/stock/getClientById/{id}").authenticated()
 
-            // Order request
-            .requestMatchers(HttpMethod.POST, "/order-production/create").authenticated()
-            .requestMatchers(HttpMethod.GET, "/order-production/get/{id}").authenticated()
-            .requestMatchers(HttpMethod.GET, "/order-production/getAll").authenticated()
-            .requestMatchers(HttpMethod.PUT, "/order-production/update/{id}").authenticated()
-            .anyRequest().permitAll()
+            // order-production request (SUPERVISOR, PRODUCTION, ADMIN)
+            .requestMatchers("/order-production/**").hasAnyRole("SUPERVISOR", "PRODUCTION", "ADMIN")
+
+            // order-production-items request (SUPERVISOR, PRODUCTION, ADMIN)
+            .requestMatchers("/order-production-items/**").hasAnyRole("SUPERVISOR", "PRODUCTION", "ADMIN")
+
+            // orders/pedidos request (ADMIN, PICKER, SUPERVISOR)
+            .requestMatchers("/orders/**").hasAnyRole("ADMIN", "PICKER", "SUPERVISOR")
+
+            .anyRequest().authenticated()
 
         ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
         .build();

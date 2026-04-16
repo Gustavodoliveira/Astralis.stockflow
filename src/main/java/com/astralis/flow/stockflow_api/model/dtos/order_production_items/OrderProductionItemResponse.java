@@ -16,6 +16,7 @@ public record OrderProductionItemResponse(
     BigDecimal quantity,
     BigDecimal unitWeight,
     String lot,
+    Integer externalLotId,
     LocalDate dateFabrication,
     LocalDate dateValidity) {
 }

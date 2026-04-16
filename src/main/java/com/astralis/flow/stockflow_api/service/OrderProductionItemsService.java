@@ -80,6 +80,7 @@ public class OrderProductionItemsService {
     existingItem.setQuantity(dto.quantity());
     existingItem.setUnitWeight(dto.unitWeight());
     existingItem.setLot(dto.lot());
+    existingItem.setExternalLotId(dto.externalLotId());
     existingItem.setDateFabrication(dto.dateFabrication());
     existingItem.setDateValidity(dto.dateValidity());
 

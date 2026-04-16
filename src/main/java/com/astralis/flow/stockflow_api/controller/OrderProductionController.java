@@ -13,8 +13,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.astralis.flow.stockflow_api.model.dtos.order_production.CreateOrderProductionRequest;
+import com.astralis.flow.stockflow_api.model.dtos.order_production.CreateOrderProductionWithItemsRequest;
 import com.astralis.flow.stockflow_api.model.dtos.order_production.OrderProductionResponse;
+import com.astralis.flow.stockflow_api.model.dtos.order_production.OrderProductionWithItemsResponse;
 import com.astralis.flow.stockflow_api.service.OrderProductionService;
+
+import jakarta.validation.Valid;
 
 import lombok.AllArgsConstructor;
 
@@ -24,6 +28,12 @@ import lombok.AllArgsConstructor;
 public class OrderProductionController {
 
   private final OrderProductionService orderProductionService;
+
+  @PostMapping("/create-with-items")
+  public ResponseEntity<OrderProductionWithItemsResponse> createOrderProductionWithItems(
+      @RequestBody @Valid CreateOrderProductionWithItemsRequest request) {
+    return ResponseEntity.ok(orderProductionService.createOrderProductionWithItems(request));
+  }
 
   @PostMapping("/create")
   public ResponseEntity<OrderProductionResponse> createOrderProduction(

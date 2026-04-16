@@ -20,6 +20,7 @@ public class OrderProductionItemsMapper {
     item.setQuantity(dto.quantity());
     item.setUnitWeight(dto.unitWeight());
     item.setLot(dto.lot());
+    item.setExternalLotId(dto.externalLotId());
     item.setDateFabrication(dto.dateFabrication());
     item.setDateValidity(dto.dateValidity());
     return item;
@@ -36,6 +37,7 @@ public class OrderProductionItemsMapper {
         item.getQuantity(),
         item.getUnitWeight(),
         item.getLot(),
+        item.getExternalLotId(),
         item.getDateFabrication(),
         item.getDateValidity());
   }

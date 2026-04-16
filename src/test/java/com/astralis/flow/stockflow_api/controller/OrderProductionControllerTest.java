@@ -28,7 +28,11 @@ import com.astralis.flow.stockflow_api.config.FilterSecurity;
 import com.astralis.flow.stockflow_api.exception.OrderProductionNotExist;
 import com.astralis.flow.stockflow_api.model.dtos.order_production.OrderProductionResponse;
 import com.astralis.flow.stockflow_api.model.enums.ProductionStatus;
+import com.astralis.flow.stockflow_api.repository.UserRepository;
+import com.astralis.flow.stockflow_api.service.JwtService;
 import com.astralis.flow.stockflow_api.service.OrderProductionService;
+
+import org.springframework.security.test.context.support.WithMockUser;
 
 @WebMvcTest(OrderProductionController.class)
 @Import(FilterSecurity.class)
@@ -39,6 +43,12 @@ class OrderProductionControllerTest {
 
   @MockitoBean
   private OrderProductionService orderProductionService;
+
+  @MockitoBean
+  private JwtService jwtService;
+
+  @MockitoBean
+  private UserRepository userRepository;
 
   private UUID orderId;
   private UUID userId;
@@ -54,6 +64,7 @@ class OrderProductionControllerTest {
   // --- POST /order-production/create ---
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void createOrderProduction_Success_Returns200() throws Exception {
     when(orderProductionService.createOrderProduction(any())).thenReturn(response);
 
@@ -74,6 +85,7 @@ class OrderProductionControllerTest {
   // --- GET /order-production/getAll ---
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void getAllOrderProductions_Returns200() throws Exception {
     when(orderProductionService.getAllOrderProductions()).thenReturn(List.of(response));
 
@@ -85,6 +97,7 @@ class OrderProductionControllerTest {
   // --- GET /order-production/get/{id} ---
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void getOrderProductionById_Found_Returns200() throws Exception {
     when(orderProductionService.getOrderProductionById(orderId.toString())).thenReturn(response);
 
@@ -94,6 +107,7 @@ class OrderProductionControllerTest {
   }
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void getOrderProductionById_NotFound_ThrowsException() throws Exception {
     when(orderProductionService.getOrderProductionById(orderId.toString()))
         .thenThrow(new OrderProductionNotExist(orderId.toString()));
@@ -106,6 +120,7 @@ class OrderProductionControllerTest {
   // --- PUT /order-production/update/{id} ---
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void updateOrderProduction_Success_Returns200() throws Exception {
     when(orderProductionService.updateOrderProduction(eq(orderId.toString()), any())).thenReturn(response);
 
@@ -126,12 +141,14 @@ class OrderProductionControllerTest {
   // --- DELETE /order-production/delete/{id} ---
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void deleteOrderProduction_Success_Returns200() throws Exception {
     mockMvc.perform(delete("/order-production/delete/{id}", orderId))
         .andExpect(status().isOk());
   }
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void deleteOrderProduction_NotFound_ThrowsException() throws Exception {
     doThrow(new OrderProductionNotExist(orderId.toString()))
         .when(orderProductionService).deleteOrderProductionById(orderId.toString());

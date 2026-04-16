@@ -60,6 +60,9 @@ public class OrderProductionItems {
   @Column(name = "lot", nullable = false, length = 50)
   private String lot;
 
+  @Column(name = "external_lot_id")
+  private Integer externalLotId;
+
   @Column(name = "date_fabrication", nullable = false)
   private LocalDate dateFabrication;
 

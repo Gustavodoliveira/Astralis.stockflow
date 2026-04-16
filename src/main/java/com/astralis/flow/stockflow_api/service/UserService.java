@@ -7,6 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +16,7 @@ import com.astralis.flow.stockflow_api.exception.BussinesException;
 import com.astralis.flow.stockflow_api.exception.EmailAlreadyExistsException;
 import com.astralis.flow.stockflow_api.model.dtos.users.ChangePasswordDto;
 import com.astralis.flow.stockflow_api.model.dtos.users.CreateUserDto;
+import com.astralis.flow.stockflow_api.model.dtos.users.LoginRequest;
 import com.astralis.flow.stockflow_api.model.dtos.users.UpdateUserDto;
 import com.astralis.flow.stockflow_api.model.dtos.users.CreateUserWithTokenResponse;
 import com.astralis.flow.stockflow_api.model.dtos.users.UserResponse;
@@ -35,6 +38,8 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
 
   private final JwtService jwtService;
+
+  private final AuthenticationManager authenticationManager;
 
   public CreateUserWithTokenResponse createUser(CreateUserDto createUserDto) {
     try {
@@ -169,5 +174,14 @@ public class UserService {
     } catch (Exception e) {
       throw new RuntimeException("Erro ao buscar usuário por email: " + e.getMessage());
     }
+  }
+
+  public CreateUserWithTokenResponse login(LoginRequest request) {
+    authenticationManager.authenticate(
+        new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+    var user = userRepository.findByEmail(request.email())
+        .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado"));
+    var token = jwtService.generateToken(user.getEmail());
+    return new CreateUserWithTokenResponse(userMapper.toResponse(user), token);
   }
 }

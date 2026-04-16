@@ -29,7 +29,11 @@ import com.astralis.flow.stockflow_api.config.FilterSecurity;
 import com.astralis.flow.stockflow_api.exception.OrderProductionNotExist;
 import com.astralis.flow.stockflow_api.model.dtos.order_production_items.OrderProductionItemResponse;
 import com.astralis.flow.stockflow_api.model.enums.ItemType;
+import com.astralis.flow.stockflow_api.repository.UserRepository;
+import com.astralis.flow.stockflow_api.service.JwtService;
 import com.astralis.flow.stockflow_api.service.OrderProductionItemsService;
+
+import org.springframework.security.test.context.support.WithMockUser;
 
 @WebMvcTest(OrderProductionItemsController.class)
 @Import(FilterSecurity.class)
@@ -40,6 +44,12 @@ class OrderProductionItemsControllerTest {
 
   @MockitoBean
   private OrderProductionItemsService orderProductionItemsService;
+
+  @MockitoBean
+  private JwtService jwtService;
+
+  @MockitoBean
+  private UserRepository userRepository;
 
   private UUID itemId;
   private UUID orderId;
@@ -52,12 +62,13 @@ class OrderProductionItemsControllerTest {
     itemResponse = new OrderProductionItemResponse(
         itemId, orderId, ItemType.Input, "EXT-001", "Produto A",
         "kg", new BigDecimal("10.500"), new BigDecimal("2.300"),
-        "LOTE-001", LocalDate.now(), LocalDate.now().plusDays(365));
+        "LOTE-001", null, LocalDate.now(), LocalDate.now().plusDays(365));
   }
 
   // --- POST /order-production-items ---
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void createItems_Success_Returns201() throws Exception {
     when(orderProductionItemsService.createOrderProductionItems(any())).thenReturn(List.of(itemResponse));
 
@@ -89,6 +100,7 @@ class OrderProductionItemsControllerTest {
   // --- GET /order-production-items/order/{orderId} ---
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void getByOrderId_Returns200() throws Exception {
     when(orderProductionItemsService.getItemsByOrderProductionId(orderId.toString()))
         .thenReturn(List.of(itemResponse));
@@ -99,6 +111,7 @@ class OrderProductionItemsControllerTest {
   }
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void getByOrderId_EmptyList_Returns200() throws Exception {
     when(orderProductionItemsService.getItemsByOrderProductionId(orderId.toString()))
         .thenReturn(List.of());
@@ -111,6 +124,7 @@ class OrderProductionItemsControllerTest {
   // --- GET /order-production-items/{id} ---
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void getById_Found_Returns200() throws Exception {
     when(orderProductionItemsService.getItemById(itemId.toString())).thenReturn(itemResponse);
 
@@ -120,6 +134,7 @@ class OrderProductionItemsControllerTest {
   }
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void getById_NotFound_ThrowsException() throws Exception {
     when(orderProductionItemsService.getItemById(itemId.toString()))
         .thenThrow(new OrderProductionNotExist(itemId.toString()));
@@ -132,6 +147,7 @@ class OrderProductionItemsControllerTest {
   // --- PUT /order-production-items/{id} ---
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void updateItem_Success_Returns200() throws Exception {
     when(orderProductionItemsService.updateOrderProductionItem(eq(itemId.toString()), any()))
         .thenReturn(itemResponse);
@@ -161,12 +177,14 @@ class OrderProductionItemsControllerTest {
   // --- DELETE /order-production-items/{id} ---
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void deleteItem_Success_Returns204() throws Exception {
     mockMvc.perform(delete("/order-production-items/{id}", itemId))
         .andExpect(status().isNoContent());
   }
 
   @Test
+  @WithMockUser(roles = "SUPERVISOR")
   void deleteItem_NotFound_ThrowsException() throws Exception {
     doThrow(new OrderProductionNotExist(itemId.toString()))
         .when(orderProductionItemsService).deleteItemById(itemId.toString());

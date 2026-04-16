@@ -26,6 +26,7 @@ import com.astralis.flow.stockflow_api.exception.BussinesException;
 import com.astralis.flow.stockflow_api.exception.EmailAlreadyExistsException;
 import com.astralis.flow.stockflow_api.model.dtos.users.ChangePasswordDto;
 import com.astralis.flow.stockflow_api.model.dtos.users.CreateUserDto;
+import com.astralis.flow.stockflow_api.model.dtos.users.CreateUserWithTokenResponse;
 import com.astralis.flow.stockflow_api.model.dtos.users.UpdateUserDto;
 import com.astralis.flow.stockflow_api.model.dtos.users.UserResponse;
 import com.astralis.flow.stockflow_api.model.dtos.users.UserSummaryResponse;
@@ -33,6 +34,8 @@ import com.astralis.flow.stockflow_api.model.entities.User;
 import com.astralis.flow.stockflow_api.model.enums.Role;
 import com.astralis.flow.stockflow_api.model.mappers.UserMapper;
 import com.astralis.flow.stockflow_api.repository.UserRepository;
+import com.astralis.flow.stockflow_api.service.JwtService;
+import org.springframework.security.authentication.AuthenticationManager;
 
 import jakarta.persistence.EntityNotFoundException;
 
@@ -47,6 +50,12 @@ class UserServiceTest {
 
   @Mock
   private PasswordEncoder passwordEncoder;
+
+  @Mock
+  private JwtService jwtService;
+
+  @Mock
+  private AuthenticationManager authenticationManager;
 
   @InjectMocks
   private UserService userService;
@@ -75,11 +84,13 @@ class UserServiceTest {
     when(passwordEncoder.encode(user.getPassword())).thenReturn("encodedPass");
     when(userRepository.save(any(User.class))).thenReturn(user);
     when(userMapper.toResponse(user)).thenReturn(userResponse);
+    when(jwtService.generateToken(any())).thenReturn("jwt-token");
 
-    UserResponse result = userService.createUser(createUserDto);
+    CreateUserWithTokenResponse result = userService.createUser(createUserDto);
 
     assertThat(result).isNotNull();
-    assertThat(result.email()).isEqualTo("test@email.com");
+    assertThat(result.user().email()).isEqualTo("test@email.com");
+    assertThat(result.token()).isEqualTo("jwt-token");
     verify(userRepository).save(any(User.class));
   }
 

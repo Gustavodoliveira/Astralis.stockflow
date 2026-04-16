@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.astralis.flow.stockflow_api.model.dtos.users.ChangePasswordDto;
 import com.astralis.flow.stockflow_api.model.dtos.users.CreateUserDto;
+import com.astralis.flow.stockflow_api.model.dtos.users.LoginRequest;
 import com.astralis.flow.stockflow_api.model.dtos.users.UpdateUserDto;
 import com.astralis.flow.stockflow_api.model.dtos.users.UserSummaryResponse;
 import com.astralis.flow.stockflow_api.model.entities.User;
@@ -44,6 +45,12 @@ public class UserController {
     logger.info("Iniciando criação de usuário com nome: {}", createUserDto.name());
     var userResponse = userService.createUser(createUserDto);
     return ResponseEntity.ok(userResponse);
+  }
+
+  @PostMapping("/login")
+  public ResponseEntity<Object> login(@Valid @RequestBody LoginRequest loginRequest) {
+    var response = userService.login(loginRequest);
+    return ResponseEntity.ok(response);
   }
 
   @GetMapping("/getAll")
