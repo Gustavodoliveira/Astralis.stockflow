@@ -42,7 +42,7 @@ services:
       # Configurações da API externa
       EXTERNAL_API_BASE_URL: https://api.iniciativaaplicativos.com.br/api
       EXTERNAL_API_TOKEN: usQjA5McLAyQLc16S9wnESl9fAk4kDYbVasJtyRzMKPPufpx7uqnH6r1128HCw6Q
-      EXTERNAL_API_SECRET: lxs7KnxBIX24w88t4J169KPxc9UTgdFyfPloZdRGRMfKKJL2YxtawOnbe4zy1VlG
+      EXTERNAL_API_SECRET: N6xABOkITdDi2CuVt0RlNzATsY7WM8cF1HaOWzXWYkI7gwXb5o5HB7LlPn89NncM
 
       # Configurações da API Omie
       OMIE_API_BASE_URL: https://app.omie.com.br/api/v1

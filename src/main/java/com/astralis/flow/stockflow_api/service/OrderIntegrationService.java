@@ -178,6 +178,13 @@ public class OrderIntegrationService {
       String json = externalApiClient.get("/comercial/pvendas/lista?offset=50&page=1&filters=status|stock");
       logger.info("Resposta bruta da API de pedidos: {}", json);
       GetOrdersResponse wrapper = objectMapper.readValue(json, GetOrdersResponse.class);
+
+      if (Boolean.FALSE.equals(wrapper.success())) {
+        String errorMsg = String.format("API externa retornou erro [%s]: %s", wrapper.code(), wrapper.message());
+        logger.error(errorMsg);
+        throw new RuntimeException(errorMsg);
+      }
+
       List<ExternalOrderDTO> dtos = wrapper.response();
 
       return dtos.stream()
@@ -201,6 +208,8 @@ public class OrderIntegrationService {
             if (externalOrderRepository.existsByExternalId(dto.id())) {
               ExternalOrder existing = externalOrderRepository.findByExternalId(dto.id()).get();
               entity.setId(existing.getId());
+              entity.setUserId(existing.getUserId());
+              entity.setStatusInterno(existing.getStatusInterno());
               if (existing.getItens() != null)
                 existing.getItens().clear();
               logger.info("Pedido externo {} atualizado.", dto.id());

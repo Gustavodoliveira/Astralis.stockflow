@@ -231,6 +231,13 @@ public class StockIntegrationService {
       logger.info("Resposta bruta da API de clientes para id {}: {}", id, jsonResponse);
 
       GetClientsResponse fullResponse = objectMapper.readValue(jsonResponse, GetClientsResponse.class);
+
+      if (Boolean.FALSE.equals(fullResponse.success())) {
+        logger.error("API externa retornou erro ao buscar cliente {}: [{}] {}", id, fullResponse.code(),
+            fullResponse.message());
+        return List.of();
+      }
+
       List<ClientResponseDTO> clients = fullResponse.response() != null
           ? List.of(clientMapper.toResponseDTO(fullResponse.response()))
           : List.of();
