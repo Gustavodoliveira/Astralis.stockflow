@@ -27,6 +27,8 @@ import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.BaseFont;
 import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfWriter;
+import com.lowagie.text.pdf.PdfReader;
+import com.lowagie.text.pdf.PdfCopy;
 
 import lombok.RequiredArgsConstructor;
 
@@ -64,6 +66,35 @@ public class ProductionPdfService {
     Map<UUID, ProductionQualityCheck> recorded = qualityChecks.findByOrderId(id).stream()
         .collect(Collectors.toMap(q -> q.getItem().getId(), Function.identity()));
     return pdf((writer, doc) -> drawQuality(writer, doc, order, qualityItems, recorded));
+  }
+
+  /**
+   * Single printable file: all production-order pages, followed by all
+   * fractionation/quality-control pages. Each form retains its own layout.
+   */
+  @Transactional(readOnly = true)
+  public byte[] completePdf(UUID id) {
+    byte[] production = orderPdf(id);
+    byte[] quality = qualityPdf(id);
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+      Document document = new Document();
+      PdfCopy copy = new PdfCopy(document, out);
+      document.open();
+      for (byte[] source : new byte[][] { production, quality }) {
+        PdfReader reader = new PdfReader(source);
+        try {
+          for (int page = 1; page <= reader.getNumberOfPages(); page++) {
+            copy.addPage(copy.getImportedPage(reader, page));
+          }
+        } finally {
+          reader.close();
+        }
+      }
+      document.close();
+      return out.toByteArray();
+    } catch (Exception e) {
+      throw new IllegalStateException("Could not combine production and fractionation reports", e);
+    }
   }
 
   private OrderProduction load(UUID id) {
