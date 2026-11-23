@@ -211,6 +211,9 @@ public class ProductionPdfService {
       centered(cb, bold, 8, 278, 75, "Código");
       centered(cb, bold, 8, 407, 57, "Características Organolépticas");
       centered(cb, bold, 8, 407, 68, "APROVADO?");
+      centered(cb, bold, 6.8f, 344, 87, "Aspecto");
+      centered(cb, bold, 6.8f, 407, 87, "Cor");
+      centered(cb, bold, 6.8f, 469, 87, "Odor");
       centered(cb, bold, 7, 537, 64, "Coletou");
       centered(cb, bold, 7, 537, 74, "Amostras?");
       centered(cb, bold, 7, 605, 64, "Verificação");
