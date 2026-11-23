@@ -1,6 +1,11 @@
 package com.astralis.flow.stockflow_api.controller;
 
 import java.util.List;
+import java.util.UUID;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.RequestParam;
+import com.astralis.flow.stockflow_api.service.ProductionPdfService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,6 +33,28 @@ import lombok.AllArgsConstructor;
 public class OrderProductionController {
 
   private final OrderProductionService orderProductionService;
+  private final ProductionPdfService productionPdfService;
+
+  @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+  public ResponseEntity<byte[]> downloadProductionPdf(@PathVariable UUID id,
+      @RequestParam(defaultValue = "false") boolean inline) {
+    return file(productionPdfService.orderPdf(id), "ordem-producao-" + id + ".pdf", inline);
+  }
+
+  @GetMapping(value = "/{id}/quality-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+  public ResponseEntity<byte[]> downloadQualityPdf(@PathVariable UUID id,
+      @RequestParam(defaultValue = "false") boolean inline) {
+    return file(productionPdfService.qualityPdf(id), "fracionamento-" + id + ".pdf", inline);
+  }
+
+  private ResponseEntity<byte[]> file(byte[] content, String name, boolean inline) {
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_PDF)
+        .contentLength(content.length)
+        .header(HttpHeaders.CONTENT_DISPOSITION,
+            (inline ? "inline" : "attachment") + "; filename=\"" + name + "\"")
+        .body(content);
+  }
 
   @PostMapping("/create-with-items")
   public ResponseEntity<OrderProductionWithItemsResponse> createOrderProductionWithItems(
