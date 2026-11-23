@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -14,9 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.astralis.flow.stockflow_api.exception.OrderProductionNotExist;
 import com.astralis.flow.stockflow_api.model.entities.OrderProduction;
 import com.astralis.flow.stockflow_api.model.entities.OrderProductionItems;
+import com.astralis.flow.stockflow_api.model.entities.ProductionQualityCheck;
 import com.astralis.flow.stockflow_api.model.enums.ItemType;
 import com.astralis.flow.stockflow_api.repository.OrderProductionItemsRepository;
 import com.astralis.flow.stockflow_api.repository.OrderProductionRepository;
+import com.astralis.flow.stockflow_api.repository.ProductionQualityCheckRepository;
 import com.lowagie.text.Document;
 import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.BaseFont;
@@ -37,6 +42,7 @@ public class ProductionPdfService {
 
   private final OrderProductionRepository orders;
   private final OrderProductionItemsRepository items;
+  private final ProductionQualityCheckRepository qualityChecks;
 
   @Transactional(readOnly = true)
   public byte[] orderPdf(UUID id) {
@@ -55,7 +61,9 @@ public class ProductionPdfService {
     if (outputs.isEmpty())
       outputs = items.findByOrderProductionIdAndItemType(id, ItemType.Input);
     List<OrderProductionItems> qualityItems = outputs;
-    return pdf((writer, doc) -> drawQuality(writer, doc, order, qualityItems));
+    Map<UUID, ProductionQualityCheck> recorded = qualityChecks.findByOrderId(id).stream()
+        .collect(Collectors.toMap(q -> q.getItem().getId(), Function.identity()));
+    return pdf((writer, doc) -> drawQuality(writer, doc, order, qualityItems, recorded));
   }
 
   private OrderProduction load(UUID id) {
@@ -118,17 +126,19 @@ public class ProductionPdfService {
                       OrderProduction order, int page, boolean production) {
     text(cb, bold, 8.5f, 27, 34, "BRASIL ERVAS");
     text(cb, bold, 9.2f, 326, 44, "ORDEM DE PRODUÇÃO - Nº " + shortId(order));
-    text(cb, font, 8, 352, 61, "Responsável: " + order.getUser().getName());
+    text(cb, font, 8, 352, 61, "Responsável: " + safe(order.getReportResponsible()));
     line(cb, 20, 88, RIGHT, 88, 0.6f);
     text(cb, font, 7.5f, 780, 40, FULL_DATE.format(created(order)));
     text(cb, font, 7.5f, 797, 60, "Pág.: " + page);
     text(cb, bold, 7.5f, 35, 102, "Requisição:");
-    text(cb, font, 7.5f, 87, 102, shortId(order));
+    text(cb, font, 7.5f, 87, 102, safe(order.getRequisitionNumber()));
     text(cb, bold, 7.5f, 224, 102, "Data Início:");
-    text(cb, font, 7.5f, 279, 102, FULL_DATE.format(created(order)));
+    text(cb, font, 7.5f, 279, 102, fullDate(order.getStartedOn() != null ? order.getStartedOn() : created(order)));
     text(cb, bold, 7.5f, 412, 102, "Data Conclusão:");
-    line(cb, 491, 106, 554, 106, .5f);
+    if (order.getCompletedOn() == null) line(cb, 491, 106, 554, 106, .5f);
+    else text(cb,font,7.5f,493,102,fullDate(order.getCompletedOn()));
     text(cb, bold, 7.5f, 35, 120, "Descritivo:");
+    text(cb, font, 7.5f, 89, 120, fit(order.getDescription(), 110));
   }
 
   private float sectionTitle(PdfContentByte cb, BaseFont bold, String title, float top, boolean input) {
@@ -184,7 +194,8 @@ public class ProductionPdfService {
   }
 
   private void drawQuality(PdfWriter writer, Document doc, OrderProduction order,
-                           List<OrderProductionItems> rows) throws Exception {
+                           List<OrderProductionItems> rows,
+                           Map<UUID, ProductionQualityCheck> recorded) throws Exception {
     BaseFont font = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
     BaseFont bold = BaseFont.createFont(BaseFont.HELVETICA_BOLD, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
     int index = 0;
@@ -213,8 +224,17 @@ public class ProductionPdfService {
         gridRow(cb, xs, y, 16);
         text(cb, font, 7.3f, 22, y+11, fit(item.getProductName(), 38));
         text(cb, font, 7.3f, 246, y+11, item.getExternalProductId());
+        ProductionQualityCheck check = recorded.get(item.getId());
+        Boolean[] approvals = check == null ? new Boolean[]{null,null,null}
+            : new Boolean[]{check.getAspectApproved(),check.getColorApproved(),check.getOdorApproved()};
         for(int k=0;k<3;k++)
-          text(cb, bold, 6.8f, 316 + k*62, y+11, "SIM(  )  NÃO(  )");
+          text(cb, bold, 6.8f, 316 + k*62, y+11, mark(approvals[k]));
+        if (check != null) {
+          text(cb,font,7.0f,506,y+11,yesNo(check.getSamplesCollected()));
+          text(cb,font,7.0f,574,y+11,yesNo(check.getLabelsVerified()));
+          text(cb,font,7.0f,643,y+11,fit(check.getResponsible(),10));
+          text(cb,font,7.0f,703,y+11,fit(check.getCorrectiveAction(),23));
+        }
         y += 16;
       }
       // No inspection result is invented: empty cells are meant to be completed on the app or by hand.
@@ -256,7 +276,15 @@ public class ProductionPdfService {
   }
   private String shortId(OrderProduction order) {
     // Until a numeric business sequence is introduced, use a stable UUID prefix.
-    return order.getId().toString().substring(0,8).toUpperCase(Locale.ROOT);
+    return order.getOrderNumber() == null ? order.getId().toString().substring(0,8).toUpperCase(Locale.ROOT)
+        : order.getOrderNumber().toString();
+  }
+  private String fullDate(LocalDate value) { return value == null ? "" : FULL_DATE.format(value); }
+  private String safe(String value) { return value == null ? "" : value; }
+  private String yesNo(Boolean value) { return value == null ? "" : value ? "SIM" : "NÃO"; }
+  private String mark(Boolean value) {
+    if (value == null) return "SIM(  )  NÃO(  )";
+    return value ? "SIM(X)  NÃO(  )" : "SIM(  )  NÃO(X)";
   }
   private String date(LocalDate value) { return value == null ? "" : DATE.format(value); }
   private String value(java.math.BigDecimal value) {
