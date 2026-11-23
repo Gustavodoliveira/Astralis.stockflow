@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
+import com.lowagie.text.pdf.PdfReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -51,6 +52,27 @@ class ProductionPdfServiceTest {
     byte[] result = service.qualityPdf(id);
     assertTrue(result.length > 100);
     assertEquals("%PDF", new String(result, 0, 4, StandardCharsets.US_ASCII));
+  }
+
+  @Test
+  void completePdfContainsProductionFollowedByFractionation() throws Exception {
+    UUID id = UUID.randomUUID();
+    when(orders.findById(id)).thenReturn(Optional.of(order(id)));
+    when(items.findByOrderProductionIdAndItemType(id, ItemType.Input)).thenReturn(List.of(item("INSUMO TESTE")));
+    when(items.findByOrderProductionIdAndItemType(id, ItemType.Output)).thenReturn(List.of(item("PRODUTO TESTE")));
+    when(qualityChecks.findByOrderId(id)).thenReturn(List.of());
+
+    byte[] result = service.completePdf(id);
+    assertEquals("%PDF", new String(result, 0, 4, StandardCharsets.US_ASCII));
+    PdfReader reader = new PdfReader(result);
+    try {
+      assertEquals(2, reader.getNumberOfPages());
+      String first = new String(reader.getPageContent(1), StandardCharsets.ISO_8859_1);
+      String second = new String(reader.getPageContent(2), StandardCharsets.ISO_8859_1);
+      assertNotEquals(first, second);
+    } finally {
+      reader.close();
+    }
   }
 
   private OrderProduction order(UUID id) {
