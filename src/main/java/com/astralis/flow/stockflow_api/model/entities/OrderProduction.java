@@ -1,6 +1,7 @@
 package com.astralis.flow.stockflow_api.model.entities;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.springframework.data.annotation.CreatedDate;
@@ -35,6 +36,24 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class OrderProduction {
+
+  @Column(name = "order_number", insertable = false, updatable = false)
+  private Long orderNumber;
+
+  @Column(name = "requisition_number", length = 60)
+  private String requisitionNumber;
+
+  @Column(name = "description", length = 255)
+  private String description;
+
+  @Column(name = "started_on")
+  private LocalDate startedOn;
+
+  @Column(name = "completed_on")
+  private LocalDate completedOn;
+
+  @Column(name = "report_responsible", length = 150)
+  private String reportResponsible;
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
