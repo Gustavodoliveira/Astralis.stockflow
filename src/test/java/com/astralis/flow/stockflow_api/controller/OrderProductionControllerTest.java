@@ -31,6 +31,7 @@ import com.astralis.flow.stockflow_api.model.enums.ProductionStatus;
 import com.astralis.flow.stockflow_api.repository.UserRepository;
 import com.astralis.flow.stockflow_api.service.JwtService;
 import com.astralis.flow.stockflow_api.service.OrderProductionService;
+import com.astralis.flow.stockflow_api.service.ProductionPdfService;
 
 import org.springframework.security.test.context.support.WithMockUser;
 
@@ -43,6 +44,9 @@ class OrderProductionControllerTest {
 
   @MockitoBean
   private OrderProductionService orderProductionService;
+
+  @MockitoBean
+  private ProductionPdfService productionPdfService;
 
   @MockitoBean
   private JwtService jwtService;
