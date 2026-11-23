@@ -38,7 +38,7 @@ public class OrderProductionController {
   @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
   public ResponseEntity<byte[]> downloadProductionPdf(@PathVariable UUID id,
       @RequestParam(defaultValue = "false") boolean inline) {
-    return file(productionPdfService.orderPdf(id), "ordem-producao-" + id + ".pdf", inline);
+    return file(productionPdfService.completePdf(id), "ordem-completa-" + id + ".pdf", inline);
   }
 
   @GetMapping(value = "/{id}/quality-pdf", produces = MediaType.APPLICATION_PDF_VALUE)
