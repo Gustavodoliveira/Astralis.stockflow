@@ -55,6 +55,16 @@ public class OrderProduction {
   @Column(name = "report_responsible", length = 150)
   private String reportResponsible;
 
+  // Preserve the original constructor used by existing services/tests.
+  public OrderProduction(UUID id, User user, ProductionStatus productionStatus,
+                         Instant createdAt, Instant updatedAt) {
+    this.id = id;
+    this.user = user;
+    this.productionStatus = productionStatus;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+  }
+
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   private UUID id;
